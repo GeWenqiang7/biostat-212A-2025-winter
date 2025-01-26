@@ -51,6 +51,10 @@ fit <- lm(sales ~ TV, data = )
 
 ![](images/clipboard-2321342665.png){width="527"}
 
+\(a\)
+
+\(b\)
+
 ## ISL Exercise 2.4.4 (10% pts)
 
 ![](images/clipboard-1845645679.png)
@@ -90,14 +94,13 @@ Your can read in the `boston` data set directly from url <https://raw.githubuser
 
 ```{r, evalue = F}
 library(tidyverse)
-
 Boston <- read_csv("https://raw.githubusercontent.com/ucla-biostat-212a/2024winter/master/slides/data/Boston.csv", col_select = -1) %>% 
   print(width = Inf)
 ```
 
 #### Python
 
-```{python}
+```{python, evalue = F}
 import pandas as pd
 import io
 import requests
@@ -111,27 +114,101 @@ Boston
 
 ## ![](images/clipboard-2802351124.png)
 
-\(a\) Done!
+\(a\)
+
+```{r}
+library(tidyverse)
+Boston <- read_csv("https://raw.githubusercontent.com/ucla-biostat-212a/2024winter/master/slides/data/Boston.csv", col_select = -1) %>% 
+  print(width = Inf)
+```
+
+Done!
 
 \
-(b)There are 506 rows and 13 columns. Rows represent suburbs or towns in the Boston area. Each column represents a predictor (feature) or response variable (e.g., crime rate, tax rate, median value of homes).
+(b)
+
+```{r}
+nrow(Boston)  
+ncol(Boston)  
+```
+
+There are 506 rows and 13 columns. Rows represent suburbs or towns in the Boston area. Each column represents a feature or response variable (e.g., crime rate, tax rate, median value of homes).
 
 \(c\)
 
-```{python}
-import seaborn as sns
-import matplotlib.pyplot as plt
+```{r}
+library(ggplot2)
+library(tidyr)
+Boston_long <- Boston %>% 
+  pivot_longer(cols = everything(), names_to = "variable", values_to = "value")
+ggplot(Boston, aes(x = lstat, y = medv)) +
+  geom_point(alpha = 0.6, color = "steelblue") +
+  theme_minimal() +
+  labs(title = "Pairwise Scatterplots",
+       x = "Lower Status of the Population",
+       y = "Median Value of Homes")
 
-selected_columns = ['crim', 'zn', 'tax', 'medv','indus']
-df_selected = boston[selected_columns]
-
-sns.pairplot(df_selected, diag_kind='kde') 
-plt.show()
 ```
 
 \(d\)
 
+```{r}
+cor(Boston$crim, Boston[-1], use = "complete.obs")
+```
+
+```{r}
+library(corrplot)
+corrplot(cor_matrix, method = "color", type = "upper", 
+         col = colorRampPalette(c("blue", "white", "red"))(200),
+         addCoef.col = "black", number.cex = 0.7, tl.cex = 0.8)
+
+
+```
+
+Rad is strongly positively correlated with crime rate, indicating that areas with better highway access may attract higher crime rates. Higher property tax rates are also positively correlated with crime. Nitric oxide concentration shows a moderate positive correlation
+
+.Dis (-0.38): Distance from Boston’s employment centers is negatively correlated with crime rates, implying that areas farther from the city center tend to have lower crime rates. Rm: is negatively correlated with crime, suggesting that larger homes are associated with lower crime rates.Zn: Proportion of large residential zones is also negatively correlated.
+
 \(e\)
+
+```{r}
+high_crime <- Boston %>% filter(crim > quantile(crim, 0.7))
+high_tax <- Boston %>% filter(tax > quantile(tax, 0.7))
+high_ptratio <- Boston %>% filter(ptratio > quantile(ptratio, 0.7))
+cat("High Crime:", nrow(high_crime), 
+    "\nHigh Tax:", nrow(high_tax), 
+    "\nHigh Pupil-Teacher Ratio:", nrow(high_ptratio), "\n")
+```
+
+\(f\)
+
+```{r}
+sum(Boston$chas == 1)  
+```
+
+\(g\)
+
+```{r}
+median(Boston$ptratio, na.rm = TRUE)
+
+```
+
+\(h\)
+
+```{r}
+lowest_medv <- Boston %>% filter(medv == min(medv, na.rm = TRUE))
+
+```
+
+\(i\)
+
+```{r}
+seven_rooms <- Boston %>% filter(rm > 7)
+eight_rooms <- Boston %>% filter(rm > 8)
+nrow(seven_rooms)
+nrow(eight_rooms)
+
+```
 
 ## ISL Exercise 3.7.3 (20% pts)
 
@@ -150,6 +227,12 @@ plt.show()
 ![](images/clipboard-3010492794.png)
 
 ## ![](images/clipboard-3808075512.png)
+
+\(a\)
+
+\(b\)
+
+\(c\)
 
 ## Bonus question (20% pts)
 
