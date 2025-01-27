@@ -53,7 +53,48 @@ fit <- lm(sales ~ TV, data = )
 
 \(a\)
 
-\(b\)
+```{r}
+library(ggplot2)
+
+Flexibility <- 1:100
+Bias <- 100 / Flexibility 
+Variance <- Flexibility / 10 
+TrainingError <- 100 / Flexibility
+TestError <- Bias + Variance 
+BayesError <- rep(10, 100)  
+
+# Combine into a data frame
+data <- data.frame(
+  Flexibility = Flexibility,
+  Bias = Bias,
+  Variance = Variance,
+  TrainingError = TrainingError,
+  TestError = TestError,
+  BayesError = BayesError
+)
+data_long <- reshape2::melt(data, id.vars = "Flexibility", variable.name = "ErrorType", value.name = "ErrorValue")
+
+ggplot(data_long, aes(x = Flexibility, y = ErrorValue, color = ErrorType)) +
+  geom_line(size = 1.2) +
+  labs(
+    title = "Bias-Variance Decomposition",
+    x = "Model Flexibility",
+    y = "Error Value",
+    color = "Error Components"
+  ) +
+  scale_color_manual(
+    values = c("blue", "red", "green", "purple", "orange"),
+    labels = c("Bias (Squared)", "Variance", "Training Error", "Test Error", "Bayes Error")
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "right",
+    plot.title = element_text(size = 14, face = "bold", hjust = 0.5)
+  )
+
+```
+
+\(b\) Bias Curve: Decreases because as flexibility increases, the model can better fit the training data, reducing systematic error.Variance Curve: Increases because more flexible models are more sensitive to small fluctuations in the data, leading to overfitting.Training Error Curve: Always decreases because more flexible models can perfectly fit (or nearly fit) the training data.Test Error Curve: U-shaped because it is influenced by both bias and variance. Initially, test error decreases as bias dominates. Later, it increases as variance dominates.Bayes Error: Stays constant as it represents noise or irreducible error in the data.
 
 ## ISL Exercise 2.4.4 (10% pts)
 
@@ -122,9 +163,7 @@ Boston <- read_csv("https://raw.githubusercontent.com/ucla-biostat-212a/2024wint
   print(width = Inf)
 ```
 
-Done!
-
-\
+Done!\
 (b)
 
 ```{r}
@@ -147,6 +186,8 @@ ggplot(Boston, aes(x = lstat, y = medv)) +
   labs(title = "Pairwise Scatterplots",
        x = "Lower Status of the Population",
        y = "Median Value of Homes")
+
+pairs(Boston, main = "Pairwise Scatterplots of Boston Dataset")
 
 ```
 
