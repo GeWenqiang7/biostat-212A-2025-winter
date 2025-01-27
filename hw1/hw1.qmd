@@ -150,14 +150,14 @@ Boston <- read_csv("https://raw.githubusercontent.com/ucla-biostat-212a/2024wint
 #### Python
 
 ```{python, evalue = F}
-import pandas as pd
-import io
-import requests
-
-url = "https://raw.githubusercontent.com/ucla-econ-425t/2023winter/master/slides/data/Boston.csv"
-s = requests.get(url).content
-Boston = pd.read_csv(io.StringIO(s.decode('utf-8')), index_col = 0)
-Boston
+# import pandas as pd
+# import io
+# import requests
+# 
+# url = "https://raw.githubusercontent.com/ucla-econ-425t/2023winter/master/slides/data/Boston.csv"
+# s = requests.get(url).content
+# Boston = pd.read_csv(io.StringIO(s.decode('utf-8')), index_col = 0)
+# Boston
 ```
 :::
 
@@ -288,7 +288,7 @@ The crime rate in most suburbs is very low, with a minimum of 0.01208. Some subu
 
 ![](images/clipboard-2573688108.png)
 
-## ![](images/clipboard-1304642707.png)
+![](images/clipboard-1304642707.png)
 
 (a)-(b)
 
@@ -373,12 +373,14 @@ print(summary_multi_model)
 multi_reg_results <- data.frame(
   Predictor = rownames(summary_multi_model$coefficients),
   Coefficient = summary_multi_model$coefficients[, 1],
-  P_Value = summary_multi_model$coefficients[, 4]
+  p_Value = summary_multi_model$coefficients[, 4]
 )
 
-significant_vars <- names(p_values[p_values < 0.05])
+significant_vars <- multi_reg_results$Predictor[multi_reg_results$p_Value < 0.05]
+
 print("Significant Predictors:")
 print(significant_vars)
+
 ```
 
 zn:The regression coefficient is 0.0448, indicating a positive correlation between the proportion of large-scale residential land and the crime rate.dis:The regression coefficient is -0.9872, indicating that the further away from the employment center, the lower the crime rate (negative correlation).rad:The regression coefficient is 0.5882, and the higher the radiation index, the higher the crime rate (positive correlation).black:The regression coefficient is -0.0075, indicating a negative correlation between the proportion of black people and the crime rate.medv:The regression coefficient is -0.1988, indicating that the higher the median housing price, the lower the crime rate (negative correlation).
@@ -464,3 +466,5 @@ The relationship between these variables (Indus, NOx, age,dis, ptratio and medv.
 For multiple linear regression, show that $R^2$ is equal to the correlation between the response vector $\mathbf{y} = (y_1, \ldots, y_n)^T$ and the fitted values $\hat{\mathbf{y}} = (\hat y_1, \ldots, \hat y_n)^T$. That is $$
 R^2 = 1 - \frac{\text{RSS}}{\text{TSS}} = [\operatorname{Cor}(\mathbf{y}, \hat{\mathbf{y}})]^2.
 $$
+
+![](images/clipboard-1942909937.jpeg)
