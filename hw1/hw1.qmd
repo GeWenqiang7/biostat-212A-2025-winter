@@ -42,6 +42,14 @@ Given an estimate $\hat f$ of $f$, show that the test error at a $x_0$ can be de
 \operatorname{E}\{[y_0 - \hat f(x_0)]^2\} = \underbrace{\operatorname{Var}(\hat f(x_0)) + [\operatorname{Bias}(\hat f(x_0))]^2}_{\text{MSE of } \hat f(x_0) \text{ for estimating } f(x_0)} + \underbrace{\operatorname{Var}(\epsilon)}_{\text{irreducible}},
 $$ where the expectation averages over the variability in $y_0$ and $\hat f$.
 
+Optimal regression function:
+
+![](images/clipboard-2780810541.jpeg)
+
+Bias-variance trade-off:
+
+![](images/clipboard-2041856251.jpeg)
+
 ## ISL Exercise 2.4.3 (10% pts)
 
 ```{r, eval = F}
@@ -153,7 +161,7 @@ Boston
 ```
 :::
 
-## ![](images/clipboard-2802351124.png)
+![](images/clipboard-2802351124.png)
 
 \(a\)
 
@@ -176,50 +184,64 @@ There are 506 rows and 13 columns. Rows represent suburbs or towns in the Boston
 \(c\)
 
 ```{r}
-library(ggplot2)
-library(tidyr)
-Boston_long <- Boston %>% 
-  pivot_longer(cols = everything(), names_to = "variable", values_to = "value")
-ggplot(Boston, aes(x = lstat, y = medv)) +
-  geom_point(alpha = 0.6, color = "steelblue") +
-  theme_minimal() +
-  labs(title = "Pairwise Scatterplots",
-       x = "Lower Status of the Population",
-       y = "Median Value of Homes")
-
-pairs(Boston, main = "Pairwise Scatterplots of Boston Dataset")
-
+library(GGally)
+library(MASS)
+data(Boston)
+selected_predictors <- Boston[, 1:6]
+ggpairs(selected_predictors) +
+  ggtitle("Pairwise Scatterplots of Selected Predictors")
 ```
+
+The correlation coefficient between Zn and Crimea is -0.200, showing a weak negative correlation. When Zn increases, there is a slight downward trend in Crimea.Indus is moderately positively correlated with Crimea. A higher proportion of industrial land is associated with a higher crime rate.chas: The correlation coefficient with Crimea is -0.056, indicating no significant linear relationship.The correlation coefficient between NOx and Crimea is 0.421, showing a moderate positive correlation. Higher concentrations of nitric oxide may be associated with higher crime rates.rm: The correlation coefficient with Crimea is -0.219, showing a weak negative correlation. The crime rate is higher when the average number of rooms is small.
+
+The correlation coefficient between Indus and NOx is 0.764, showing a strong positive correlation, indicating that the higher the proportion of industrial land, the more severe the air pollution (NOx).RM is negatively correlated with both Indus and NOX, indicating that houses with more rooms are usually located in areas with lower industrial land ratios and less pollution.Distribution shape and pattern:Some variables, such as zn and crim, exhibit nonlinear patterns and may require further exploration of their nonlinear relationships.
 
 \(d\)
 
 ```{r}
-cor(Boston$crim, Boston[-1], use = "complete.obs")
+library(MASS)
+data(Boston)
+results <- data.frame(Predictor = character(), Coefficient = numeric(), P_Value = numeric())
+for (predictor in colnames(Boston)[-1]) {  # Exclude `crim` as it's the response variable
+  model <- lm(crim ~ Boston[[predictor]], data = Boston)
+  summary_model <- summary(model)
+  results <- rbind(results, data.frame(
+    Predictor = predictor,
+    Coefficient = coef(summary_model)[2, 1],  # Slope (relationship strength and direction)
+    P_Value = coef(summary_model)[2, 4]      # P-value (significance)
+  ))
+}
+
+significant_results <- subset(results, P_Value < 0.05)
+print("Significant Predictors Associated with Crime Rate:")
+print(significant_results)
 ```
 
-```{r}
-library(corrplot)
-corrplot(cor_matrix, method = "color", type = "upper", 
-         col = colorRampPalette(c("blue", "white", "red"))(200),
-         addCoef.col = "black", number.cex = 0.7, tl.cex = 0.8)
+The crime rate is significantly positively correlated with factors such as the industrial land ratio (indus), nitric oxide concentration (NOx), age of old houses, highway accessibility (rad), property tax rate (tax), and student teacher ratio (ptratio). This indicates that areas with high levels of economic industrialization, severe air pollution, convenient transportation, but limited educational resources have higher crime rates.
 
-
-```
-
-Rad is strongly positively correlated with crime rate, indicating that areas with better highway access may attract higher crime rates. Higher property tax rates are also positively correlated with crime. Nitric oxide concentration shows a moderate positive correlation
-
-.Dis (-0.38): Distance from Boston’s employment centers is negatively correlated with crime rates, implying that areas farther from the city center tend to have lower crime rates. Rm: is negatively correlated with crime, suggesting that larger homes are associated with lower crime rates.Zn: Proportion of large residential zones is also negatively correlated.
+The crime rate is significantly negatively correlated with the proportion of large-scale residential land (Zn), the average number of rooms in a house (RM), the weighted distance from the employment center (DIS), and the proportion of black people (Black). These results indicate that low-density residential communities, higher housing quality, areas further away from urban employment centers, and areas with a higher proportion of black people have lower crime rates.
 
 \(e\)
 
 ```{r}
-high_crime <- Boston %>% filter(crim > quantile(crim, 0.7))
-high_tax <- Boston %>% filter(tax > quantile(tax, 0.7))
-high_ptratio <- Boston %>% filter(ptratio > quantile(ptratio, 0.7))
+summary(Boston$crim)
+summary(Boston$tax)
+summary(Boston$ptratio)
+ 
+high_crime <- Boston[Boston$crim > quantile(Boston$crim, 0.8), ]
+high_tax <- Boston[Boston$tax > quantile(Boston$tax, 0.8), ]
+high_ptratio <- Boston[Boston$ptratio > quantile(Boston$ptratio, 0.8), ]
+ 
 cat("High Crime:", nrow(high_crime), 
     "\nHigh Tax:", nrow(high_tax), 
     "\nHigh Pupil-Teacher Ratio:", nrow(high_ptratio), "\n")
 ```
+
+The distribution of crime rates is extremely uneven, with some suburban areas (such as crime rates\>3.67708) being high crime areas, with the highest values far above the average, and there are obvious extreme values (such as the highest value of 88.97620).
+
+The tax rate distribution is relatively concentrated, with most suburbs having tax rates ranging from 187 to 666, and only a few suburbs (such as\>666) at high tax rates.
+
+The distribution of student teacher ratio is relatively even, with only some suburban areas experiencing significant shortage of educational resources (e.g.\>20)
 
 \(f\)
 
@@ -227,29 +249,40 @@ cat("High Crime:", nrow(high_crime),
 sum(Boston$chas == 1)  
 ```
 
+There are 35 suburbs bound the Charles river.
+
 \(g\)
 
 ```{r}
 median(Boston$ptratio, na.rm = TRUE)
-
 ```
+
+The median pupil-teacher ratio among the towns is 19.05.
 
 \(h\)
 
 ```{r}
-lowest_medv <- Boston %>% filter(medv == min(medv, na.rm = TRUE))
-
+lowest_medv <- Boston[which.min(Boston$medv), ]
+lowest_medv
 ```
+
+The high crime rate is an important factor in the decline of housing prices.A high proportion of old buildings may reduce their attractiveness.Severe air pollution and high level of industrialization: have a negative impact on the quality of living environment.High tax rates and limited educational resources will increase the cost of living and reduce the attractiveness of housing.
 
 \(i\)
 
 ```{r}
-seven_rooms <- Boston %>% filter(rm > 7)
-eight_rooms <- Boston %>% filter(rm > 8)
-nrow(seven_rooms)
-nrow(eight_rooms)
+over_7_rooms <- sum(Boston$rm > 7)
+over_8_rooms <- sum(Boston$rm > 8)
 
+over_7_rooms
+over_8_rooms
+
+Boston[Boston$rm > 8, ]
 ```
+
+There are 64 and 13 suburbs average more than seven and eight rooms per dwelling.
+
+The crime rate in most suburbs is very low, with a minimum of 0.01208. Some suburbs have a high proportion of large residential areas (such as the suburbs with a Zn of 95). The lower concentration of nitric oxide indicates lower air pollution in these areas (such as NOx mostly ranging from 0.4 to 0.6). The proportion of house updates is relatively low in some areas, such as some suburban areas with an age of less than 20. These suburbs are often far from employment centers, indicating that their locations are more remote.
 
 ## ISL Exercise 3.7.3 (20% pts)
 
@@ -267,13 +300,164 @@ nrow(eight_rooms)
 
 ![](images/clipboard-3010492794.png)
 
-## ![](images/clipboard-3808075512.png)
+![](images/clipboard-3808075512.png)
 
 \(a\)
 
+```{r}
+library(MASS)
+data(Boston)
+
+simple_reg_results <- data.frame(Predictor = character(), Coefficient = numeric(), P_Value = numeric())
+
+for (predictor in colnames(Boston)[-1]) {
+  model <- lm(crim ~ Boston[[predictor]], data = Boston)
+  summary_model <- summary(model)
+  simple_reg_results <- rbind(simple_reg_results, data.frame(
+    Predictor = predictor,
+    Coefficient = coef(summary_model)[2, 1],
+    P_Value = coef(summary_model)[2, 4]
+  ))
+}
+
+significant_predictors <- subset(simple_reg_results, P_Value < 0.05)
+print(significant_predictors)
+```
+
+```{r}
+library(ggplot2)
+output_folder <- "crim_plots"
+if (!dir.exists(output_folder)) {
+  dir.create(output_folder)
+}
+
+for (predictor in significant_predictors$Predictor) {
+  p <- ggplot(Boston, aes(x = .data[[predictor]], y = crim)) +
+    geom_point(alpha = 0.6) +
+    geom_smooth(method = "lm", color = "blue", se = FALSE) +
+    ggtitle(paste("Linear Regression: crim vs", predictor)) +
+    theme_minimal()
+  plot_path <- file.path(output_folder, paste0("crim_vs_", predictor, ".png"))
+  ggsave(filename = plot_path, plot = p, width = 7, height = 7)
+}
+```
+
+```{r}
+library(png)
+library(grid)
+saved_files <- list.files(output_folder, pattern = "\\.png$", full.names = TRUE)  
+
+for (file in saved_files) {
+  cat("Displaying:", file, "\n")   
+  img <- png::readPNG(file) 
+  grid::grid.newpage()       
+  grid::grid.raster(img)   
+}
+```
+
+zn: Negative correlation indicates that a higher proportion of large-scale residential land is associated with lower crime rates. indus: Positive correlation, the higher the proportion of industrial land, the higher the crime rate. nox: Strong positive correlation indicates a significant correlation between air pollution level (nitric oxide concentration) and crime rate. rm: Negative correlation, the more average rooms there are, the lower the crime rate. age: Positive correlation, the higher the proportion of old houses, the slightly higher the crime rate. dis: Negative correlation, the farther away from the employment center, the lower the crime rate. rad: Strong positive correlation, the higher the radiation radius index (indicating high accessibility), the higher the crime rate. tax: Positive correlation, the higher the property tax rate, the slightly higher the crime rate. ptratio: Positive correlation, the higher the student teacher ratio, the higher the crime rate. black: Negative correlation indicates that areas with a higher proportion of black people have lower crime rates.
+
+In all of models, there is a statistically significant association between the preditctor and response.
+
 \(b\)
 
+```{r}
+library(MASS)
+data(Boston)
+
+multi_model <- lm(crim ~ ., data = Boston)
+
+summary_multi_model <- summary(multi_model)
+print(summary_multi_model)
+
+multi_reg_results <- data.frame(
+  Predictor = rownames(summary_multi_model$coefficients),
+  Coefficient = summary_multi_model$coefficients[, 1],
+  P_Value = summary_multi_model$coefficients[, 4]
+)
+
+significant_vars <- names(p_values[p_values < 0.05])
+print("Significant Predictors:")
+print(significant_vars)
+```
+
+zn:The regression coefficient is 0.0448, indicating a positive correlation between the proportion of large-scale residential land and the crime rate.dis:The regression coefficient is -0.9872, indicating that the further away from the employment center, the lower the crime rate (negative correlation).rad:The regression coefficient is 0.5882, and the higher the radiation index, the higher the crime rate (positive correlation).black:The regression coefficient is -0.0075, indicating a negative correlation between the proportion of black people and the crime rate.medv:The regression coefficient is -0.1988, indicating that the higher the median housing price, the lower the crime rate (negative correlation).
+
+The p-values of Indus, Chas, NOx, RM, Age, Tax, and PTRatio are greater than 0.05, therefore they cannot be considered significantly correlated with crime rates.
+
+The p-values of zn, dis, rad, black, medv are less than 0.05, so they can reject the null hypothesis.
+
 \(c\)
+
+```{r}
+# Merge results from (a) and (b)
+merged_results <- merge(
+  simple_reg_results,
+  multi_reg_results,
+  by.x = "Predictor",
+  by.y = "Predictor",
+  suffixes = c("_Simple", "_Multiple")
+)
+
+ggplot(merged_results, aes(x = Coefficient_Simple, y = Coefficient_Multiple)) +
+  geom_point(size = 2) +
+  geom_abline(intercept = 0, slope = 1, color = "red", linetype = "dashed") +
+  ggtitle("Comparison of Coefficients: Simple vs. Multiple Regression") +
+  xlab("Simple Regression Coefficients") +
+  ylab("Multiple Regression Coefficients") +
+  theme_minimal()
+```
+
+\(d\)
+
+```{r}
+nonlinear_results <- data.frame(Predictor = character(), Linear_P = numeric(), Quadratic_P = numeric(), Cubic_P = numeric())
+
+for (predictor in colnames(Boston)[-1]) {
+  model <- lm(crim ~ Boston[[predictor]] + I(Boston[[predictor]]^2) + I(Boston[[predictor]]^3), data = Boston)
+  summary_model <- summary(model)
+
+  coef_matrix <- coef(summary_model)
+  if (nrow(coef_matrix) >= 4) {  
+    nonlinear_results <- rbind(nonlinear_results, data.frame(
+      Predictor = predictor,
+      Linear_P = coef_matrix[2, 4],       
+      Quadratic_P = coef_matrix[3, 4],    
+      Cubic_P = coef_matrix[4, 4]       
+    ))
+  } else {
+ 
+    nonlinear_results <- rbind(nonlinear_results, data.frame(
+      Predictor = predictor,
+      Linear_P = ifelse(nrow(coef_matrix) >= 2, coef_matrix[2, 4], NA),
+      Quadratic_P = ifelse(nrow(coef_matrix) >= 3, coef_matrix[3, 4], NA),
+      Cubic_P = NA
+    ))
+  }
+}
+ 
+significant_nonlinear <- subset(nonlinear_results, Quadratic_P < 0.05 | Cubic_P < 0.05, select = c(Predictor, Quadratic_P, Cubic_P))
+print("Significant Non-Linear Predictors:")
+print(significant_nonlinear)
+```
+
+```{r}
+library(ggplot2)
+for (predictor in significant_nonlinear$Predictor) {
+  p <- ggplot(Boston, aes_string(x = predictor, y = "crim")) +
+    geom_point(alpha = 0.6) +
+    geom_smooth(method = "lm", formula = y ~ poly(x, 3), color = "blue", se = FALSE) +
+    ggtitle(paste("Non-Linear Relationship (Cubic): crim vs", predictor)) +
+    xlab(predictor) +
+    ylab("crim") +
+    theme_minimal()
+  
+  print(p)
+}
+
+```
+
+The relationship between these variables (Indus, NOx, age,dis, ptratio and medv.) and Crimea is not a simple linear relationship, but a more complex curve relationship (including U-shaped trends or other nonlinear patterns).
 
 ## Bonus question (20% pts)
 
