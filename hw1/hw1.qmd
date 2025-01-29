@@ -189,12 +189,16 @@ There are 506 rows and 13 columns. Rows represent suburbs or towns in the Boston
 \(c\)
 
 ```{r}
+library(ISLR2)
 library(GGally)
-library(MASS)
-data(Boston)
-selected_predictors <- Boston[, 1:6]
-ggpairs(selected_predictors) +
-  ggtitle("Pairwise Scatterplots of Selected Predictors")
+library(ggplot2)
+ggpairs(
+  data = Boston,  
+  mapping = aes(alpha = 0.5),
+  upper = list(continuous = wrap("cor", size = 3)), 
+  lower = list(continuous = wrap("smooth", method = "lm", se = FALSE))
+) + 
+  labs(title = "Pairwise Scatterplots of All Predictors")
 ```
 
 The correlation coefficient between Zn and Crimea is -0.200, showing a weak negative correlation. When Zn increases, there is a slight downward trend in Crimea.Indus is moderately positively correlated with Crimea. A higher proportion of industrial land is associated with a higher crime rate.chas: The correlation coefficient with Crimea is -0.056, indicating no significant linear relationship.The correlation coefficient between NOx and Crimea is 0.421, showing a moderate positive correlation. Higher concentrations of nitric oxide may be associated with higher crime rates.rm: The correlation coefficient with Crimea is -0.219, showing a weak negative correlation. The crime rate is higher when the average number of rooms is small.

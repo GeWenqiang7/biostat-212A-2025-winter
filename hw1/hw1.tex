@@ -194,11 +194,11 @@
 \makeatother
 \subtitle{Due Jan 28, 2025 @ 11:59PM}
 \author{Wenqiang Ge UID:106371961}
-\date{2025-01-27}
+\date{2025-01-28}
 
 \begin{document}
 \maketitle
-\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[breakable, borderline west={3pt}{0pt}{shadecolor}, frame hidden, enhanced, interior hidden, boxrule=0pt, sharp corners]}{\end{tcolorbox}}\fi
+\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[sharp corners, frame hidden, enhanced, boxrule=0pt, breakable, interior hidden, borderline west={3pt}{0pt}{shadecolor}]}{\end{tcolorbox}}\fi
 
 \renewcommand*\contentsname{Table of contents}
 {
@@ -518,12 +518,16 @@ the Boston area. Each column represents a feature or response variable
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\FunctionTok{library}\NormalTok{(ISLR2)}
 \FunctionTok{library}\NormalTok{(GGally)}
-\FunctionTok{library}\NormalTok{(MASS)}
-\FunctionTok{data}\NormalTok{(Boston)}
-\NormalTok{selected\_predictors }\OtherTok{\textless{}{-}}\NormalTok{ Boston[, }\DecValTok{1}\SpecialCharTok{:}\DecValTok{6}\NormalTok{]}
-\FunctionTok{ggpairs}\NormalTok{(selected\_predictors) }\SpecialCharTok{+}
-  \FunctionTok{ggtitle}\NormalTok{(}\StringTok{"Pairwise Scatterplots of Selected Predictors"}\NormalTok{)}
+\FunctionTok{library}\NormalTok{(ggplot2)}
+\FunctionTok{ggpairs}\NormalTok{(}
+  \AttributeTok{data =}\NormalTok{ Boston,  }
+  \AttributeTok{mapping =} \FunctionTok{aes}\NormalTok{(}\AttributeTok{alpha =} \FloatTok{0.5}\NormalTok{),}
+  \AttributeTok{upper =} \FunctionTok{list}\NormalTok{(}\AttributeTok{continuous =} \FunctionTok{wrap}\NormalTok{(}\StringTok{"cor"}\NormalTok{, }\AttributeTok{size =} \DecValTok{3}\NormalTok{)), }
+  \AttributeTok{lower =} \FunctionTok{list}\NormalTok{(}\AttributeTok{continuous =} \FunctionTok{wrap}\NormalTok{(}\StringTok{"smooth"}\NormalTok{, }\AttributeTok{method =} \StringTok{"lm"}\NormalTok{, }\AttributeTok{se =} \ConstantTok{FALSE}\NormalTok{))}
+\NormalTok{) }\SpecialCharTok{+} 
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Pairwise Scatterplots of All Predictors"}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
