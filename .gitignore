@@ -48,4 +48,8 @@ po/*~
 # RStudio Connect folder
 rsconnect/
 
-.Rproj
+# 忽略 RProj 文件
+*.Rproj
+
+# 忽略 gitignore.txt 文件（如果需要）
+gitignore.txt
