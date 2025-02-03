@@ -1,0 +1,56 @@
+---
+title: "Biostat 212a Homework 2"
+subtitle: "Due Feb 8, 2025 @ 11:59PM"
+author: "Wenqiang Ge UID:106371961"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+format:
+  # pdf:
+  #   documentclass: article
+  #   toc: true
+  #   toc-depth: 2
+  #   keep-tex: true
+  html:
+    theme: cosmo
+    embed-resources: true
+    number-sections: true
+    toc: true
+    toc-depth: 4
+    toc-location: left
+    code-fold: false
+engine: knitr
+knitr:
+  opts_chunk: 
+    fig.align: 'center'
+    # fig.width: 6
+    # fig.height: 4
+    message: FALSE
+    cache: false
+---
+
+## ISL Exercise 4.8.1 (10pts)
+
+![](images/clipboard-4077728568.png)
+
+## ![](images/clipboard-3304908845.png)![](images/clipboard-249183538.png)
+
+## ISL Exercise 4.8.6 (10pts)
+
+![](images/clipboard-2695304714.png)
+
+## ISL Exercise 4.8.9 (10pts)
+
+![](images/clipboard-2955947930.png)
+
+## ISL Exercise 4.8.13 (a)-(i) (50pts)
+
+![](images/clipboard-2962329981.png)
+
+![](images/clipboard-3390512393.png)
+
+## Bonus question: ISL Exercise 4.8.13 Part (j) (30pts)
+
+![](images/clipboard-698312542.png)
+
+## Bonus question: ISL Exercise 4.8.4 (30pts)
+
+![![](images/clipboard-3443800866.png)](images/clipboard-4051626028.png)
