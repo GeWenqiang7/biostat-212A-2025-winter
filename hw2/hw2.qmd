@@ -31,26 +31,82 @@ knitr:
 
 ![](images/clipboard-4077728568.png)
 
-## ![](images/clipboard-3304908845.png)![](images/clipboard-249183538.png)
+![](images/clipboard-3304908845.png)![](images/clipboard-249183538.png)
+
+------------------------------------------------------------------------
+
+Solution:
+
+![](images/clipboard-2967000257.jpeg){width="660"}
 
 ## ISL Exercise 4.8.6 (10pts)
 
 ![](images/clipboard-2695304714.png)
 
+------------------------------------------------------------------------
+
+Solution:
+
+![](images/clipboard-3585369922.jpeg){width="666"}
+
 ## ISL Exercise 4.8.9 (10pts)
 
 ![](images/clipboard-2955947930.png)
 
+------------------------------------------------------------------------
+
+Solution:
+
+![](images/clipboard-3451261091.jpeg){width="675"}
+
 ## ISL Exercise 4.8.13 (a)-(i) (50pts)
 
-![](images/clipboard-2962329981.png)
+![](images/clipboard-2962329981.png){width="667"}
 
-![](images/clipboard-3390512393.png)
+![](images/clipboard-3390512393.png){width="661"}
+
+------------------------------------------------------------------------
+
+Solution:
+
+```{r}
+# Set the working directory to the folder containing the CSV file
+setwd("~/biostat-212A-2025-winter/ALL CSV FILES - 2nd Edition")
+
+# Load the Weekly data from the CSV file
+Weekly <- read.csv("Weekly.csv")
+```
+
+\(a\)
+
+```{r}
+# Convert factor or character columns to numeric
+numeric_columns <- c("Lag1", "Lag2", "Lag3", "Lag4", "Lag5")
+for (col in numeric_columns) {
+    Weekly[[col]] <- as.numeric(as.character(Weekly[[col]]))
+}
+
+# Check the first few rows to ensure it's loaded correctly
+head(Weekly)
+
+# Creating pairs plot for only numeric columns
+pairs(Weekly[sapply(Weekly, is.numeric)])
+hist(Weekly$Volume, main = "Histogram of Volume", xlab = "Volume")
+
+```
 
 ## Bonus question: ISL Exercise 4.8.13 Part (j) (30pts)
 
 ![](images/clipboard-698312542.png)
 
+------------------------------------------------------------------------
+
+Solution:
+
 ## Bonus question: ISL Exercise 4.8.4 (30pts)
 
-![![](images/clipboard-3443800866.png)](images/clipboard-4051626028.png)
+![![](images/clipboard-3443800866.png){width="612"}](images/clipboard-4051626028.png){width="645"}
+
+------------------------------------------------------------------------
+
+Solution:
