@@ -29,9 +29,13 @@ knitr:
 
 ## ISL Exercise 4.8.1 (10pts)
 
-![](images/clipboard-4077728568.png)
+```{r, echo=FALSE, out.width="100%", fig.align='center'}
+knitr::include_graphics("images/clipboard-4077728568.png")
+```
 
-![](images/clipboard-3304908845.png)![](images/clipboard-249183538.png)
+```{r, echo=FALSE, out.width="40%", fig.align='center'}
+knitr::include_graphics(c("images/clipboard-3304908845.png", "images/clipboard-249183538.png"))
+```
 
 ------------------------------------------------------------------------
 
@@ -228,7 +232,8 @@ train_Y <- train_data$Direction
 test_Y <- test_data$Direction
 
 # Apply KNN with K=1
-knn_preds <- knn(train = matrix(train_X), test = matrix(test_X), cl = train_Y, k = 1)
+knn_preds <- knn(train = matrix(train_X), test = matrix(test_X), 
+                 cl = train_Y, k = 1)
 
 # Compute confusion matrix
 conf_matrix_knn <- table(Predicted = knn_preds, Actual = test_Y)
@@ -270,8 +275,10 @@ print(paste("Naive Bayes test accuracy:", round(nb_accuracy, 4)))
 ```{r}
 # Create a comparison table
 model_comparison <- data.frame(
-  Model = c("Logistic Regression", "LDA", "QDA", "KNN (K=1)", "Naive Bayes"),
-  Accuracy = c(test_accuracy, lda_accuracy, qda_accuracy, knn_accuracy, nb_accuracy)
+  Model = c("Logistic Regression", "LDA", "QDA", "KNN (K=1)", 
+            "Naive Bayes"),
+  Accuracy = c(test_accuracy, lda_accuracy, qda_accuracy, 
+               knn_accuracy, nb_accuracy)
 )
 
 # Print comparison results
@@ -289,16 +296,200 @@ The Logistic Regression and LDA appear to have the best results on this data, an
 
 Solution:
 
-\(j\)
+\(j\) Logistic Regression with multiple predictors
+
+```{r}
+logistic_model_extended <- glm(Direction ~ Lag1 + Lag2 + Lag3 + Lag4 + Lag5 + Volume, 
+                               data=train_data, family=binomial)
+
+# Predictions
+test_probs_extended <- predict(logistic_model_extended, newdata=test_data, type="response")
+test_preds_extended <- ifelse(test_probs_extended > 0.5, "Up", "Down")
+
+# Confusion Matrix
+conf_matrix_logistic_extended <- table(Predicted = test_preds_extended, Actual = test_data$Direction)
+logistic_accuracy_extended <- mean(test_preds_extended == test_data$Direction)
+
+print(conf_matrix_logistic_extended)
+print(paste("Extended Logistic Regression Accuracy:", round(logistic_accuracy_extended, 4)))
+
+```
+
+Logistic Regression with interaction terms
+
+```{r}
+logistic_model_interaction <- glm(Direction ~ Lag2 * Volume, 
+                                  data=train_data, family=binomial)
+
+# Predictions
+test_probs_interaction <- predict(logistic_model_interaction, 
+                                  newdata=test_data, type="response")
+test_preds_interaction <- ifelse(test_probs_interaction > 0.5, "Up", "Down")
+
+# Confusion Matrix
+conf_matrix_logistic_interaction <- table(Predicted = test_preds_interaction, 
+                                          Actual = test_data$Direction)
+logistic_accuracy_interaction <- mean(
+  test_preds_interaction == test_data$Direction
+  )
+
+print(conf_matrix_logistic_interaction)
+print(paste("Logistic Regression with Interaction Accuracy:", 
+            round(logistic_accuracy_interaction, 4)))
+
+
+```
+
+LDA with More Predictors
+
+```{r}
+library(MASS)
+lda_model_extended <- lda(Direction ~ Lag1 + Lag2 + Lag3 + Lag4 + Lag5 + Volume, 
+                          data=train_data)
+
+# Predictions
+lda_preds_extended <- predict(lda_model_extended, newdata=test_data)$class
+
+# Confusion Matrix
+conf_matrix_lda_extended <- table(Predicted = lda_preds_extended, Actual = 
+                                    test_data$Direction)
+lda_accuracy_extended <- mean(lda_preds_extended == test_data$Direction)
+
+print(conf_matrix_lda_extended)
+print(paste("Extended LDA Accuracy:", round(lda_accuracy_extended, 4)))
+
+```
+
+QDA with More Predictors
+
+```{r}
+qda_model_extended <- qda(Direction ~ Lag1 + Lag2 + Lag3 + Lag4 + Lag5 + Volume, 
+                          data=train_data)
+
+# Predictions
+qda_preds_extended <- predict(qda_model_extended, newdata=test_data)$class
+
+# Confusion Matrix
+conf_matrix_qda_extended <- table(Predicted = qda_preds_extended, Actual = 
+                                    test_data$Direction)
+qda_accuracy_extended <- mean(qda_preds_extended == test_data$Direction)
+
+print(conf_matrix_qda_extended)
+print(paste("Extended QDA Accuracy:", round(qda_accuracy_extended, 4)))
+
+```
+
+Tuning K for KNN
+
+```{r}
+library(class)
+
+# Function to evaluate KNN for different K values
+knn_evaluate <- function(k) {
+  knn_preds <- knn(train=as.matrix(train_data[, c("Lag2")]), 
+                   test=as.matrix(test_data[, c("Lag2")]), 
+                   cl=train_data$Direction, k=k)
+  
+  conf_matrix_knn <- table(Predicted = knn_preds, Actual = test_data$Direction)
+  knn_accuracy <- mean(knn_preds == test_data$Direction)
+  
+  return(list(conf_matrix=conf_matrix_knn, accuracy=knn_accuracy))
+}
+
+# Experiment with different values of K
+knn_results <- lapply(c(1, 3, 5, 7, 10, 15, 20), knn_evaluate)
+
+# Print results for each K
+for (i in 1:length(knn_results)) {
+  print(paste("KNN with K =", c(1, 3, 5, 7, 10, 15, 20)[i]))
+  print(knn_results[[i]]$conf_matrix)
+  print(paste("Accuracy:", round(knn_results[[i]]$accuracy, 4)))
+}
+
+```
+
+Naive Bayes with More Predictors
+
+```{r}
+library(e1071)
+nb_model_extended <- naiveBayes(Direction ~ Lag1 + Lag2 + 
+                                  Lag3 + Lag4 + Lag5 + Volume, data=train_data)
+
+# Predictions
+nb_preds_extended <- predict(nb_model_extended, newdata=test_data)
+
+# Confusion Matrix
+conf_matrix_nb_extended <- table(Predicted = nb_preds_extended, Actual = 
+                                   test_data$Direction)
+nb_accuracy_extended <- mean(nb_preds_extended == test_data$Direction)
+
+print(conf_matrix_nb_extended)
+print(paste("Extended Naive Bayes Accuracy:", round(nb_accuracy_extended, 4)))
+
+```
+
+Comparing All Models
+
+```{r}
+# Create a comparison table
+model_comparison <- data.frame(
+  Model = c("Logistic Regression", "logistic_model_extended", 
+            "Logistic Regression (Interaction)", 
+            "LDA", "LDA (Extended)", "QDA", "QDA (Extended)", 
+            "KNN (K=1)","KNN (K=3)", "KNN (K=5)", "KNN (K=7)", 
+            "KNN (K=10)", "KNN (K=15)", "KNN (K=20)", 
+            "Naive Bayes", "Naive Bayes (Extended)"),
+  Accuracy = c(test_accuracy, logistic_accuracy_extended, 
+               logistic_accuracy_interaction, 
+               lda_accuracy, lda_accuracy_extended, 
+               qda_accuracy, qda_accuracy_extended, 
+               knn_results[[1]]$accuracy, knn_results[[2]]$accuracy, 
+               knn_results[[3]]$accuracy, knn_results[[4]]$accuracy, 
+               knn_results[[5]]$accuracy, knn_results[[6]]$accuracy, 
+               knn_results[[7]]$accuracy,
+               nb_accuracy, nb_accuracy_extended)
+)
+
+# Print comparison results
+print(model_comparison)
+```
+
+## Bonus question: ISL Exercise 4.8.4 (30pts)
+
+```{r, echo=FALSE, out.width="71%", fig.align='center'}
+knitr::include_graphics(("images/clipboard-4051626028.png"))
+```
+
+```{r, echo=FALSE, out.width="60%", fig.align='center'}
+knitr::include_graphics(("images/clipboard-3443800866.png"))
+```
+
+------------------------------------------------------------------------
+
+Solution:
+
+(a)Since the feature $X$ is uniformly distributed in the range$[0,1]$, We consider a test observation and use only those within 10% of its range. If a test point is at $𝑋 = 0.6$, we use observations in the range: $[ 0.55 , 0.65]$. The total range is 1 (from 0 to 1), so the fraction of data used is$\frac{selected range}{total range} = \frac{0.65 − 0.55}{1} = 0.10$ Therefore, we use 10% of the data.
+
+\(b\)
 
 ```{r}
 
 ```
 
-## Bonus question: ISL Exercise 4.8.4 (30pts)
+\(c\)
 
-![![](images/clipboard-3443800866.png){width="612"}](images/clipboard-4051626028.png){width="645"}
+```{r}
 
-------------------------------------------------------------------------
+```
 
-Solution:
+\(d\)
+
+```{r}
+
+```
+
+\(e\)
+
+```{r}
+
+```
