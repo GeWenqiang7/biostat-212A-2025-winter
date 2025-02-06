@@ -100,6 +100,10 @@ cor(Weekly[, -9])  # Exclude the Direction column
 
 ```
 
+Volume has increased significantly over time. Returns (Today) have a mean near zero, indicating relatively balanced ups and downs in market movement. The Direction variable (Up/Down) suggests a roughly even split, meaning the market is not strongly biased in one direction.
+
+Upward (Up) and downward (Down) movements have different distributions. Down days have more extreme negative outliers, indicating higher risk when the market declines. The median return is slightly higher for "Up" movements, but variance is similar for both.
+
 \(b\)
 
 ```{r}
@@ -468,28 +472,50 @@ knitr::include_graphics(("images/clipboard-3443800866.png"))
 
 Solution:
 
-(a)Since the feature $X$ is uniformly distributed in the range$[0,1]$, We consider a test observation and use only those within 10% of its range. If a test point is at $𝑋 = 0.6$, we use observations in the range: $[ 0.55 , 0.65]$. The total range is 1 (from 0 to 1), so the fraction of data used is$\frac{selected range}{total range} = \frac{0.65 − 0.55}{1} = 0.10$ Therefore, we use 10% of the data.
+\(a\) Since the feature $X$ is uniformly distributed in the range$[0,1]$, We consider a test observation and use only those within 10% of its range.
 
-\(b\)
+If a test point is at $𝑋 = 0.6$, we use observations in the range: $[ 0.55 , 0.65]$. The total range is 1, so the fraction of data used is$\frac{selected\ range}{total\ range} = \frac{0.65 − 0.55}{1} = 0.1$. Therefore, we use 10% of the data.
 
-```{r}
+\(b\) We now have two features, $(X_1,X_2)$, both uniformly distributed on $[ 0 , 1] × [ 0 , 1]$.
 
-```
+To predict the response, we use only observations within 10% of both $X_1$ and $X_2$.
+
+When $X_1=0.6,\ X_2=0.35$, we will use: $X_1\in[0.55,0.65] ,\ X_2 \in [0.3,0.4]$.
+
+The fraction of data used is $\frac{selected\ range}{total\ range} = \frac{0.10 * 0.10 }{1} = 0.01$. Therefore, we use 1% of the data.
 
 \(c\)
 
-```{r}
+Now, we have 100 features, all uniformly distributed in $[0,1]$. We use only the observations within 10% of each feature's range.
 
-```
+For each feature $X_i$, we select observations within: $[X_i−0.05,\ X_i+0.05]$ (assuming the test observation is not too close to the boundaries).
+
+Since the features are independent, the fraction of observations in each dimension is 0.1. The fraction of data used is $(0.1)^{100}$, which is very small number.
+
+Therefore, in 100D space, almost none of the training data is "close" to the test point, making KNN ineffective.
 
 \(d\)
 
-```{r}
+From previous results, in 1D, we use 10% of the data; In 2D, we use 1%; In 100D, we use $(0.1)^{100}$, which is practically zero.
 
-```
+Because most points are far away, and distances between them are almost uniform, and even with millions of points, find "near" neighbors is unlikely. What's more, searching for neighbors in high-dimensional space is inefficient.
+
+Therefore, KNN performs poorly in high dimensions because there are too few nearby training points, making predictions unreliable.
 
 \(e\)
 
-```{r}
+We define a p-dimensional hypercube centered at a test point that contains 10% of the total training data.
 
-```
+Volume of the hypercube in $p-dimensional$ space is: $Fraction\ of\ Data\ Used = ( Side\ Length )^𝑝$
+
+Let $s$ be the side length of the hypercube. To contain 10% of data, we solve: $s^p = 0.1$.
+
+For $𝑝= 1$: $s^1 = 0.1$, $s=0.1$. In 1D, we take 10% of the range.
+
+For $𝑝= 2$: $s^2 = 0.1$, $s=\sqrt{0.1} \approx 0.316$. In 2D, the square has side length around 0.316, much larger than in 1D.
+
+For $𝑝= 100$: $s^{100} = 0.1$, $s=0.1^{\frac{1}{100}} = 10^{-0.01} \approx 0.977$. In 100D, the side length is about 0.977, meaning almost the entire space is included.
+
+In high dimensions, the hypercube must be almost the entire space to contain just 10% of the data. This confirms why KNN is ineffective in high dimensions: Everything is "far" apart, so the notion of "nearest neighbors" breaks down.
+
+Thus, KNN works well in low dimensions because neighbors are meaningful. In high dimensions, the space becomes too sparse, making KNN ineffective.
