@@ -37,6 +37,79 @@ knitr:
 
 Solution:
 
+\(a\) The first bootstrap sample is selected randomly from the set of $n$ observations, with replacement. The probability that the first sample is not the $j-th$ observation from the original sample is :
+
+$P\ (first\ sample\ is\ not\ j\ )\ =\ \frac{n-1}{n}$
+
+This is because there are $n−1$ other possible observations that could be selected out of the total $n$.
+
+\(b\) The second bootstrap sample is selected randomly from the set of $n$ observations, with replacement. The probability that the first sample is not the $j-th$ observation from the original sample is :
+
+$P\ (second\ sample\ is\ not\ j\ )\ =\ \frac{n-1}{n}$
+
+It has the same probability of the first sample is not the $j-th$ observation.
+
+\(c\) Since each observation is selected independently with replacement, the probability that the $j-th$ observation is not selected in any specific sample is $(1− \frac{1}{n})$. Therefore, the probability that the $j-th$ observation is not in the bootstrap sample is:
+
+$P\ (\ j-th\ observation\ is\ not\ in\ sample\ )\ =\ (1\ -\frac{1}{n})^n$.
+
+(d)The probability that the $j-th$ observation is included in the bootstrap sample when $n=5$:
+
+$P\ (\ j-th\ observation\ is\ in\ sample\ )\ =\ 1- (\ 1-\frac{1}{5})^5 \ \approx\ 0.672$
+
+(e)The probability that the $j-th$ observation is included in the bootstrap sample when $n=100$:
+
+$P\ (\ j-th\ observation\ is\ in\ sample\ )\ =\ 1- (\ 1-\frac{1}{100})^{100} \ \approx\ 0.634$
+
+(f)The probability that the $j-th$ observation is included in the bootstrap sample when $n=10,000$:
+
+$P\ (\ j-th\ observation\ is\ in\ sample\ )\ =\ 1- (\ 1-\frac{1}{10,000})^{10,000} \ \approx\ 0.632$
+
+\(g\)
+
+```{r}
+library(ggplot2)
+
+n_values <- 1:10000
+probabilities <- 1 - (1 - 1/n_values)^n_values
+data <- data.frame(n = n_values, probability = probabilities)
+
+ggplot(data, aes(x = n, y = probability)) +
+  geom_line(color = "blue") + 
+  scale_x_log10() +
+  labs(x = "Sample size (n)", 
+       y = "Probability", 
+       title = "Probability that the j-th observation is in the bootstrap sample") +
+  theme_minimal()
+
+
+
+```
+
+For small sample sizes (n \< 10), the probability is significantly lower. With very few observations, the chance of a specific observation being included in the bootstrap sample is quite low. As n increases, the probability gradually increases towards 1. The rate of this increase slows down as n gets larger, and for sufficiently large n, the probability converges near 1. The rapid increase at the start might be due to the steep nature of the function for small n. Using a logarithmic scale for the x-axis can help visualize the change more effectively for smaller values of n.
+
+\(h\)
+
+```{r}
+set.seed(10)
+n <- 100
+num_simulations <- 10000
+
+store <- numeric(num_simulations)
+
+for (i in 1:num_simulations) {
+  sample <- sample(1:n, n, replace = TRUE)  
+  store[i] <- sum(sample == 4) > 0  
+}
+
+probability <- mean(store)
+print(probability)
+```
+
+The simulation result gives a probability of approximately 0.6279. This means, based on the 10,000 simulations, the 5th observation is included in about 62.79% of the bootstrap samples.
+
+This probability shows how often the 5th observation appears in the bootstrap samples.Since bootstrap sampling is done with replacement, each observation has a chance of being repeated in each sample, and hence the probability reflects how likely it is for a specific observation (in this case, the 5th) to appear in a given sample.
+
 ## ISL Exercise 5.4.9 (20pts)
 
 ![](images/clipboard-858485636.png){width="593"}
