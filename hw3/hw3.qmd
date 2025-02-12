@@ -120,6 +120,48 @@ This probability shows how often the 5th observation appears in the bootstrap sa
 
 Solution:
 
+\(a\)
+
+```{r}
+library(ISLR)
+library(MASS)
+
+data("Boston")
+mu_hat <- mean(Boston$medv)
+print(mu_hat)
+```
+
+\(b\)
+
+```{r}
+# Calculate standard deviation of medv
+s <- sd(Boston$medv)
+
+# Calculate the number of observations
+n <- length(Boston$medv)
+
+# Calculate the standard error of the mean
+SE_mu_hat <- s / sqrt(n)
+print(SE_mu_hat)
+
+```
+
+\(c\)
+
+```{r}
+
+```
+
+\(d\)
+
+\(e\)
+
+\(f\)
+
+\(g\)
+
+\(h\)
+
 ## Least squares is MLE (10pts)
 
 Show that in the case of linear model with Gaussian errors, maximum likelihood and least squares are the same thing, and $C_p$ and AIC are equivalent.
