@@ -337,6 +337,46 @@ Irreducible error is the noise in the data that cannot be explained by the model
 
 Solution:
 
+\(a\) **i: Increase initially, and then eventually start decreasing in an inverted U shape.**
+
+When $\lambda\ =\ 0$, there is no penalty term, so the objective function is just RSS. The model will likely overfit the data with more complex models, resulting in a very low training RSS.
+
+As $\lambda$ increases, the penalty on the coefficients increases, which forces the coefficients to shrink towards zero, making the model simpler. The model will not fit the training data as perfectly, so the training RSS will initially increase.
+
+As $\lambda$ continues to increase, the model will become increasingly constrained, and the coefficients will be forced to shrink more and more, making the model even simpler.
+
+Eventually, the model will be too simple (potentially just a constant model), and the training RSS will start decreasing as it reduces the model complexity.
+
+\(b\) **ii. Decrease initially, and then eventually start increasing in a U shape.**
+
+When $\lambda\ =\ 0$, the model might overfit the data, and the test RSS will be relatively high.
+
+As $\lambda$ increases, the model starts to generalize better by reducing overfitting. This will reduce the test RSS initially.
+
+As $\lambda$ increases further, the model becomes too simple, and the test RSS may start increasing again, as it fails to capture the complexity of the data.
+
+\(c\) **v. Steadily decrease.**
+
+Variance refers to the variability of the model’s predictions.
+
+When $\lambda\ =\ 0$, the model may have high variance because it fits the training data too well, capturing noise as if it were signal.
+
+As $\lambda$ increases, the model is constrained, reducing its ability to fit the noise, and the variance of the predictions decreases.
+
+As $\lambda$ increases too much, the model becomes too simple (potentially underfitting), but the variance would remain low because it is no longer sensitive to fluctuations in the data.
+
+\(d\) **iii. Steadily increase.**
+
+When $\lambda\ =\ 0$, the model has no penalty, and it is free to fit the data exactly (which could result in low bias for the training data but high variance).
+
+As $\lambda$ increases, the model is forced to simplify, which increases bias because the model is less able to capture the true underlying relationship in the data.
+
+As $\lambda$ increases too much, the bias continues to increase because the model becomes too simple and may underfit the data.
+
+\(e\) **v. Remain constant.**
+
+The irreducible error is the noise in the data that cannot be modeled or explained by the predictors. This error is constant and does not depend on the model or the value of $\lambda$.
+
 ## ISL Exercise 6.6.5 (10pts)
 
 ![](images/clipboard-4278770393.png){width="599"}
@@ -344,6 +384,14 @@ Solution:
 ------------------------------------------------------------------------
 
 Solution:
+
+\(a\)
+
+\(b\)
+
+\(c\)
+
+\(d\)
 
 ## ISL Exercise 6.6.11 (30pts)
 
@@ -361,6 +409,12 @@ You must follow the [typical machine learning paradigm](https://ucla-biostat-212
 ------------------------------------------------------------------------
 
 Solution:
+
+\(a\)
+
+\(b\)
+
+\(c\)
 
 ## Bonus question (20pts)
 
