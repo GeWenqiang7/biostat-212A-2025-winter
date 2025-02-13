@@ -149,18 +149,111 @@ print(SE_mu_hat)
 \(c\)
 
 ```{r}
+# Number of bootstrap samples
+num_bootstrap <- 10000
 
+# Set seed for reproducibility
+set.seed(10)
+
+# Create an empty vector to store the bootstrap sample means
+bootstrap_means <- numeric(num_bootstrap)
+
+# Perform bootstrap resampling
+for (i in 1:num_bootstrap) {
+  bootstrap_sample <- sample(Boston$medv, size = n, replace = TRUE)
+  bootstrap_means[i] <- mean(bootstrap_sample)
+}
+
+# Estimate the standard error using the bootstrap
+SE_bootstrap <- sd(bootstrap_means)
+print(SE_bootstrap)
 ```
 
 \(d\)
 
+```{r}
+# Use the results from part (c) to calculate the 95% confidence interval
+
+# Calculate the sample mean
+mu_hat <- mean(Boston$medv)
+
+# Standard error from the bootstrap samples
+SE_bootstrap <- sd(bootstrap_means)
+
+# Confidence interval using bootstrap
+CI_lower_bootstrap <- mu_hat - 2 * SE_bootstrap
+CI_upper_bootstrap <- mu_hat + 2 * SE_bootstrap
+
+cat("95% Confidence Interval from Bootstrap: [", CI_lower_bootstrap, ", ", CI_upper_bootstrap, "]\n")
+
+# Now, calculate the standard error using the sample's standard deviation
+std_dev <- sd(Boston$medv)
+
+# Confidence interval using the two standard error rule
+CI_lower_sample <- mu_hat - 2 * SE_mu_hat
+CI_upper_sample <- mu_hat + 2 * SE_mu_hat
+
+cat("95% Confidence Interval from Sample Standard Error: [", CI_lower_sample, ", ", CI_upper_sample, "]\n")
+
+```
+
 \(e\)
+
+```{r}
+# Estimate the median of medv
+mu_med_hat <- median(Boston$medv)
+print(mu_med_hat)
+```
 
 \(f\)
 
+```{r}
+# Create an empty vector to store the bootstrap sample medians
+bootstrap_medians <- numeric(num_bootstrap)
+
+# Perform bootstrap resampling for median
+for (i in 1:num_bootstrap) {
+  bootstrap_sample <- sample(Boston$medv, size = n, replace = TRUE)
+  bootstrap_medians[i] <- median(bootstrap_sample)
+}
+
+# Estimate the standard error of the median
+SE_med_bootstrap <- sd(bootstrap_medians)/ sqrt(num_bootstrap)
+print(SE_med_bootstrap)
+
+```
+
 \(g\)
 
+```{r}
+# Estimate the 10th percentile of medv
+mu_hat_0.1 <- quantile(Boston$medv, 0.1)
+print(mu_hat_0.1)
+
+```
+
 \(h\)
+
+```{r}
+# Number of bootstrap samples
+num_bootstrap <- 10000
+
+# Create an empty vector to store the bootstrap sample 10th percentiles
+bootstrap_mu_hat_0.1 <- numeric(num_bootstrap)
+
+# Perform bootstrap resampling for 10th percentile
+for (i in 1:num_bootstrap) {
+  bootstrap_sample <- sample(Boston$medv, size = length(Boston$medv), replace = TRUE)
+  bootstrap_mu_hat_0.1[i] <- quantile(bootstrap_sample, 0.1)
+}
+
+# Estimate the standard error of the 10th percentile
+SE_mu_hat_0.1 <- sd(bootstrap_mu_hat_0.1)
+print(SE_mu_hat_0.1)
+
+```
+
+The standard error of 0.5086 for the 10th percentile is a relatively moderate value, suggesting that there is a moderate amount of variability in the 10th percentile across the bootstrap samples. The smaller the standard error, the more consistent the 10th percentile is across different samples.
 
 ## Least squares is MLE (10pts)
 
@@ -178,6 +271,20 @@ Solution:
 
 Solution:
 
+\(a\) Best subset selection will yield the smallest training RSS.
+
+\(b\) Forward stepwise selection will likely yield the smallest test RSS.
+
+\(c\) i: True;
+
+ii: False;
+
+iii: False;
+
+iv: True
+
+v: True
+
 ## ISL Exercise 6.6.3 (10pts)
 
 ![](images/clipboard-2208331259.png){width="607"}
@@ -185,6 +292,42 @@ Solution:
 ------------------------------------------------------------------------
 
 Solution:
+
+\(a\) **i: Increase initially, and then eventually start decreasing in an inverted U shape.**
+
+When $s$ is small (close to 0), the model will have fewer non-zero coefficients which leads to underfitting, and the training RSS will be relatively high.
+
+As $s$ increases, the model can accommodate more predictors, so it fits the data better, and the training RSS starts to decrease.
+
+As $s$ continues to increase, more coefficients are included, and the model may overfit the data. Eventually, the training RSS will start increasing again as the model becomes too complex.
+
+\(b\) **ii. Decrease initially, and then eventually start increasing in a U shape.**
+
+Training RSS follows an inverted U-shape, because increasing the number of predictors improves the fit to the training data initially, but eventually leads to overfitting.
+
+Test RSS: The test RSS will likely follow a U-shape. Initially, as you increase $s$, the test RSS will decrease (since the model starts fitting the data better), but after a certain point, as the model overfits, the test RSS will start to increase.
+
+\(c\) **ii. Decrease initially, and then eventually start increasing in a U shape.**
+
+Variance refers to the variability of the model predictions across different datasets (e.g., in a cross-validation setting or in new datasets).
+
+When $s=0$, the model is overly constrained and underfits, leading to higher variance. As we increase $s$, the model becomes more flexible and is able to fit the data better, which initially reduces variance. However, if $s$ increases too much and the model overfits, the variance will increase because the model becomes overly sensitive to the training data.
+
+\(d\) **iii. Steadily decrease.**
+
+Bias is the difference between the expected model prediction and the true value.
+
+When $s=0$, the model is highly constrained and underfits, which results in a high bias.
+
+As $s$ increases, the model becomes more flexible and starts fitting the data better, reducing the bias.
+
+If $s$ increases too much, the model starts to overfit, which means it fits the training data well but is less likely to generalize to new data, resulting in low bias.
+
+Thus, squared bias will steadily decrease as $s$ increases because the model is able to fit the true underlying relationship better.
+
+\(e\) **v. Remain constant.**
+
+Irreducible error is the noise in the data that cannot be explained by the model. It is constant and does not depend on the complexity of the model.
 
 ## ISL Exercise 6.6.4 (10pts)
 
