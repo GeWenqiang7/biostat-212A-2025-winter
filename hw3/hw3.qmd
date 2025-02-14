@@ -423,30 +423,265 @@ Solution:
 
 ![](images/clipboard-2470923067.png){width="560"}
 
-You must follow the [typical machine learning paradigm](https://ucla-biostat-212a.github.io/2024winter/slides/06-modelselection/workflow_lasso.html) to compare *at least* 3 methods: least squares, lasso, and ridge. Report final results as
-
-| Method | CV RMSE | Test RMSE |     |
-|:------:|:-------:|:---------:|:---:|
-|   LS   |         |           |     |
-| Ridge  |         |           |     |
-| Lasso  |         |           |     |
-|  ...   |         |           |     |
+You must follow the [typical machine learning paradigm](https://ucla-biostat-212a.github.io/2024winter/slides/06-modelselection/workflow_lasso.html) to compare *at least* 3 methods: least squares, lasso, and ridge. Report final results as:
 
 ------------------------------------------------------------------------
 
 Solution:
 
+| Method | CV RMSE  | Test RMSE |     |
+|:------:|:--------:|:---------:|:---:|
+|   LS   | 5.227096 | 8.994735  |     |
+| Ridge  | 5.727724 |  9.00997  |     |
+| Lasso  | 5.728481 | 9.001981  |     |
+|  PLS   | 5.179474 | 8.997268  |     |
+
 \(a\)
 
 ```{r}
+# Load necessary libraries
+library(MASS)       # Contains the Boston dataset
+library(leaps)      # For best subset selection
+library(tibble)     # For organizing results
+library(pls)         # PLS regression
+library(glmnet)      # For Ridge and Lasso regression
+library(caret)       # For cross-validation
+library(ggplot2)     # For visualization
+
+# Load Boston dataset
 data("Boston")
-head(Boston$crim)
+
+# View summary of the dataset
+summary(Boston$crim)  # Checking the crime rate statistics
+
+# Define the full model formula
+full_formula <- crim ~ .
 
 ```
 
-\(b\)
+**least squares：**
+
+```{r}
+# Define predictors (X) and target variable (y)
+X <- Boston[, -which(names(Boston) == "crim")]  # Remove crim from predictors
+y <- Boston$crim
+
+# Split data into 80% training (non-test) and 20% test set
+set.seed(123)  # For reproducibility
+train_index <- createDataPartition(y, p = 0.8, list = FALSE)
+train_data <- Boston[train_index, ]
+test_data <- Boston[-train_index, ]
+
+# Define 10-fold Cross-Validation
+train_control <- trainControl(method = "cv", number = 10)
+
+# Train Least Squares Regression (LS) model
+ls_model <- train(crim ~ ., 
+                  data = train_data, 
+                  method = "lm", 
+                  trControl = train_control)
+
+# Get Cross-Validation RMSE
+cv_rmse_ls <- ls_model$results$RMSE
+cat("LS CV RMSE:", cv_rmse_ls, "\n")
+
+# Fit the final LS model on the full training (non-test) data
+final_ls_model <- lm(crim ~ ., data = train_data)
+# Make predictions on the test set
+predictions_ls <- predict(final_ls_model, newdata = test_data)
+
+# Compute Test RMSE
+test_rmse_ls <- sqrt(mean((test_data$crim - predictions_ls)^2))
+cat("LS Test RMSE:", test_rmse_ls, "\n")
+```
+
+CV RMSE is the average validation error from cross-validation and helps select the best model. CV RMSE (5.23) estimates the expected error on new (unseen) data if we re-train the model on different training samples. Test RMSE (8.99) is the actual error on the test set (20% unseen data). It is significantly higher than CV RMSE, which indicates overfitting.
+
+**Ridge regression:**
+
+```{r}
+# Define predictors (X) and target variable (y)
+X <- Boston[, -which(names(Boston) == "crim")]  # Remove crim from predictors
+y <- Boston$crim
+
+# Convert to matrix format for glmnet
+X_matrix <- as.matrix(X)
+
+# Split data into 80% training (non-test) and 20% test set
+set.seed(123)  # For reproducibility
+train_index <- createDataPartition(y, p = 0.8, list = FALSE)
+train_X <- X_matrix[train_index, ]
+test_X <- X_matrix[-train_index, ]
+train_y <- y[train_index]
+test_y <- y[-train_index]
+
+# Standardize the predictors (Ridge requires standardization)
+train_X_scaled <- scale(train_X)
+test_X_scaled <- scale(test_X, center = attr(train_X_scaled, "scaled:center"), 
+                       scale = attr(train_X_scaled, "scaled:scale"))
+```
+
+```{r}
+# Define lambda sequence (range of values for tuning)
+lambda_seq <- 10^seq(4, -2, length = 100)
+
+# Perform cross-validation to find the best lambda
+set.seed(123)
+cv_ridge <- cv.glmnet(train_X_scaled, train_y, alpha = 0, lambda = lambda_seq)
+
+# Get the best lambda
+best_lambda_ridge <- cv_ridge$lambda.min
+cat("Best Lambda for Ridge:", best_lambda_ridge, "\n")
+
+# Cross-validation RMSE
+cv_rmse_ridge <- sqrt(min(cv_ridge$cvm))
+cat("Ridge CV RMSE:", cv_rmse_ridge, "\n")
+
+```
+
+```{r}
+# Train Ridge model with best lambda
+ridge_model <- glmnet(train_X_scaled, train_y, alpha = 0, lambda = best_lambda_ridge)
+
+# View the coefficients
+coef(ridge_model)
+
+# Make predictions on test data
+predictions_ridge <- predict(ridge_model, s = best_lambda_ridge, newx = test_X_scaled)
+
+# Compute Test RMSE
+test_rmse_ridge <- sqrt(mean((test_y - predictions_ridge)^2))
+cat("Ridge Test RMSE:", test_rmse_ridge, "\n")
+
+```
+
+The results show that Ridge Regression did not outperform Least Squares (LS) Regression in this case. The CV RMSE for Ridge (5.727724) is higher than LS (5.227096), indicating that Ridge did not improve cross-validation performance. Additionally, the Test RMSE for Ridge (9.00997) is slightly worse than LS (8.994735), suggesting that Ridge did not significantly reduce overfitting. This could be due to low multicollinearity among predictors, a dataset that is not high-dimensional, or over-penalization from Ridge’s regularization term.
+
+**LASSO:**
+
+```{r}
+# Define predictors (X) and target variable (y)
+X <- Boston[, -which(names(Boston) == "crim")]  # Remove crim from predictors
+y <- Boston$crim
+
+# Convert predictors to matrix format for glmnet
+X_matrix <- as.matrix(X)
+
+# Split data into 80% training (non-test) and 20% test set
+set.seed(123)  # For reproducibility
+train_index <- createDataPartition(y, p = 0.8, list = FALSE)
+train_X <- X_matrix[train_index, ]
+test_X <- X_matrix[-train_index, ]
+train_y <- y[train_index]
+test_y <- y[-train_index]
+
+# Standardize the predictors (Lasso requires standardization)
+train_X_scaled <- scale(train_X)
+test_X_scaled <- scale(test_X, center = attr(train_X_scaled, "scaled:center"), 
+                       scale = attr(train_X_scaled, "scaled:scale"))
+
+```
+
+```{r}
+# Define a sequence of lambda values for tuning
+lambda_seq <- 10^seq(4, -2, length = 100)
+
+# Perform cross-validation to find the best lambda
+set.seed(123)
+cv_lasso <- cv.glmnet(train_X_scaled, train_y, alpha = 1, lambda = lambda_seq)
+
+# Get the best lambda
+best_lambda_lasso <- cv_lasso$lambda.min
+cat("Best Lambda for Lasso:", best_lambda_lasso, "\n")
+
+# Cross-validation RMSE
+cv_rmse_lasso <- sqrt(min(cv_lasso$cvm))
+cat("Lasso CV RMSE:", cv_rmse_lasso, "\n")
+
+```
+
+```{r}
+# Train Lasso model with best lambda
+lasso_model <- glmnet(train_X_scaled, train_y, alpha = 1, lambda = best_lambda_lasso)
+
+# View the coefficients
+print(coef(lasso_model))
+
+# Make predictions on test data
+predictions_lasso <- predict(lasso_model, s = best_lambda_lasso, newx = test_X_scaled)
+
+# Compute Test RMSE
+test_rmse_lasso <- sqrt(mean((test_y - predictions_lasso)^2))
+cat("Lasso Test RMSE:", test_rmse_lasso, "\n")
+
+```
+
+Ridge and Lasso did not significantly improve generalization over Least Squares, suggesting that regularization had minimal effect, likely due to weak multicollinearity and the absence of clearly irrelevant predictors.
+
+**PLS:**
+
+```{r}
+# Define predictors (X) and target variable (y)
+X <- Boston[, -which(names(Boston) == "crim")]  # Remove crim from predictors
+y <- Boston$crim
+
+# Split data into 80% training (non-test) and 20% test set
+set.seed(123)  # For reproducibility
+train_index <- createDataPartition(y, p = 0.8, list = FALSE)
+train_data <- Boston[train_index, ]
+test_data <- Boston[-train_index, ]
+
+```
+
+```{r}
+# Define 10-fold Cross-Validation
+train_control <- trainControl(method = "cv", number = 10)
+
+# Train PLS regression model and tune the number of components
+set.seed(123)
+pls_model <- train(crim ~ ., data = train_data, method = "pls",
+                   trControl = train_control, tuneLength = 10)
+
+# Get the optimal number of components
+best_ncomp <- pls_model$bestTune$ncomp
+cat("Optimal number of components for PLS:", best_ncomp, "\n")
+
+# Cross-validation RMSE
+cv_rmse_pls <- min(pls_model$results$RMSE)
+cat("PLS CV RMSE:", cv_rmse_pls, "\n")
+
+```
+
+```{r}
+# Fit the final PLS model using the best number of components
+final_pls_model <- plsr(crim ~ ., data = train_data, ncomp = best_ncomp, validation = "none")
+
+# View model summary
+summary(final_pls_model)
+
+# Make predictions on the test set
+predictions_pls <- predict(final_pls_model, newdata = test_data, ncomp = best_ncomp)
+
+# Compute Test RMSE
+test_rmse_pls <- sqrt(mean((test_data$crim - predictions_pls)^2))
+cat("PLS Test RMSE:", test_rmse_pls, "\n")
+
+
+```
+
+This suggests PLS generalized slightly better than the other models during cross-validation. It also effectively reduced dimensionality while keeping important information.
+
+\(b\) Choose: LS and PLS
+
+Since LS performed nearly as well as PLS, it remains a strong candidate. LS is simpler to interpret and computationally cheaper than PLS.
+
+PLS reduces dimensionality while keeping the most important variance in the predictors. Since it achieved the lowest CV RMSE, it might generalize slightly better. a
 
 \(c\)
+
+Least Squares (LS) uses all features. LS does not perform feature selection, using all predictors.
+
+No, PLS reduces dimensionality. Instead of selecting individual features, PLS creates new components that summarize the information from the original variables.
 
 ## Bonus question (20pts)
 
