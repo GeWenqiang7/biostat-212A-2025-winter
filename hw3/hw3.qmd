@@ -188,7 +188,8 @@ SE_bootstrap <- sd(bootstrap_means)
 CI_lower_bootstrap <- mu_hat - 2 * SE_bootstrap
 CI_upper_bootstrap <- mu_hat + 2 * SE_bootstrap
 
-cat("95% Confidence Interval from Bootstrap: [", CI_lower_bootstrap, ", ", CI_upper_bootstrap, "]\n")
+cat("95% Confidence Interval from Bootstrap: [", CI_lower_bootstrap, ", ", 
+    CI_upper_bootstrap, "]\n")
 
 # Now, calculate the standard error using the sample's standard deviation
 std_dev <- sd(Boston$medv)
@@ -197,7 +198,8 @@ std_dev <- sd(Boston$medv)
 CI_lower_sample <- mu_hat - 2 * SE_mu_hat
 CI_upper_sample <- mu_hat + 2 * SE_mu_hat
 
-cat("95% Confidence Interval from Sample Standard Error: [", CI_lower_sample, ", ", CI_upper_sample, "]\n")
+cat("95% Confidence Interval from Sample Standard Error: [", 
+    CI_lower_sample, ", ", CI_upper_sample, "]\n")
 
 ```
 
@@ -251,7 +253,8 @@ bootstrap_mu_hat_0.1 <- numeric(num_bootstrap)
 
 # Perform bootstrap resampling for 10th percentile
 for (i in 1:num_bootstrap) {
-  bootstrap_sample <- sample(Boston$medv, size = length(Boston$medv), replace = TRUE)
+  bootstrap_sample <- sample(Boston$medv, size = length(Boston$medv), 
+                             replace = TRUE)
   bootstrap_mu_hat_0.1[i] <- quantile(bootstrap_sample, 0.1)
 }
 
@@ -541,13 +544,15 @@ cat("Ridge CV RMSE:", cv_rmse_ridge, "\n")
 
 ```{r}
 # Train Ridge model with best lambda
-ridge_model <- glmnet(train_X_scaled, train_y, alpha = 0, lambda = best_lambda_ridge)
+ridge_model <- glmnet(train_X_scaled, train_y, alpha = 0, 
+                      lambda = best_lambda_ridge)
 
 # View the coefficients
 coef(ridge_model)
 
 # Make predictions on test data
-predictions_ridge <- predict(ridge_model, s = best_lambda_ridge, newx = test_X_scaled)
+predictions_ridge <- predict(ridge_model, s = best_lambda_ridge, 
+                             newx = test_X_scaled)
 
 # Compute Test RMSE
 test_rmse_ridge <- sqrt(mean((test_y - predictions_ridge)^2))
@@ -602,13 +607,15 @@ cat("Lasso CV RMSE:", cv_rmse_lasso, "\n")
 
 ```{r}
 # Train Lasso model with best lambda
-lasso_model <- glmnet(train_X_scaled, train_y, alpha = 1, lambda = best_lambda_lasso)
+lasso_model <- glmnet(train_X_scaled, train_y, alpha = 1, 
+                      lambda = best_lambda_lasso)
 
 # View the coefficients
 print(coef(lasso_model))
 
 # Make predictions on test data
-predictions_lasso <- predict(lasso_model, s = best_lambda_lasso, newx = test_X_scaled)
+predictions_lasso <- predict(lasso_model, s = best_lambda_lasso, 
+                             newx = test_X_scaled)
 
 # Compute Test RMSE
 test_rmse_lasso <- sqrt(mean((test_y - predictions_lasso)^2))
@@ -654,13 +661,15 @@ cat("PLS CV RMSE:", cv_rmse_pls, "\n")
 
 ```{r}
 # Fit the final PLS model using the best number of components
-final_pls_model <- plsr(crim ~ ., data = train_data, ncomp = best_ncomp, validation = "none")
+final_pls_model <- plsr(crim ~ ., data = train_data, ncomp = best_ncomp, 
+                        validation = "none")
 
 # View model summary
 summary(final_pls_model)
 
 # Make predictions on the test set
-predictions_pls <- predict(final_pls_model, newdata = test_data, ncomp = best_ncomp)
+predictions_pls <- predict(final_pls_model, newdata = test_data, 
+                           ncomp = best_ncomp)
 
 # Compute Test RMSE
 test_rmse_pls <- sqrt(mean((test_data$crim - predictions_pls)^2))
