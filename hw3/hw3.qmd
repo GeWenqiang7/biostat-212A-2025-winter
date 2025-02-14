@@ -82,8 +82,6 @@ ggplot(data, aes(x = n, y = probability)) +
        title = "Probability that the j-th observation is in the bootstrap sample") +
   theme_minimal()
 
-
-
 ```
 
 For small sample sizes (n \< 10), the probability is significantly lower. With very few observations, the chance of a specific observation being included in the bootstrap sample is quite low. As n increases, the probability gradually increases towards 1. The rate of this increase slows down as n gets larger, and for sufficiently large n, the probability converges near 1. The rapid increase at the start might be due to the steep nature of the function for small n. Using a logarithmic scale for the x-axis can help visualize the change more effectively for smaller values of n.
@@ -146,6 +144,8 @@ print(SE_mu_hat)
 
 ```
 
+If we were to draw repeated samples from the population, the sample means would vary by approximately 0.4089 units on average. A smaller standard error indicates a more precise estimate of the population mean.
+
 \(c\)
 
 ```{r}
@@ -168,6 +168,10 @@ for (i in 1:num_bootstrap) {
 SE_bootstrap <- sd(bootstrap_means)
 print(SE_bootstrap)
 ```
+
+The bootstrap method provides a data-driven estimate of the standard error, rather than relying on the theoretical formula $\frac{s}{\sqrt{n}}$.
+
+Both methods produce similar results, confirming that the standard error formula in (b) is accurate. The Bootstrap works well even when the underlying distribution of the data is unknown. Can be applied in cases where theoretical formulas are not available.
 
 \(d\)
 
@@ -197,6 +201,8 @@ cat("95% Confidence Interval from Sample Standard Error: [", CI_lower_sample, ",
 
 ```
 
+Both methods yield very similar results,because tahe sample size is large enough for the standard error approximation to be accurate. The data distribution is approximately normal, making the standard error-based CI valid. The bootstrap method provides a more empirical estimate, without relying on normality assumptions. The standard error method is simpler and computationally efficient but assumes normality.
+
 \(e\)
 
 ```{r}
@@ -222,6 +228,8 @@ SE_med_bootstrap <- sd(bootstrap_medians)/ sqrt(num_bootstrap)
 print(SE_med_bootstrap)
 
 ```
+
+Unlike the mean, the standard error of the median cannot be computed using a simple formula. The bootstrap provides a data-driven method to estimate the uncertainty of the median. The result from bootstrap (0.0038) is small, suggesting a precise median estimate.
 
 \(g\)
 
@@ -429,6 +437,12 @@ You must follow the [typical machine learning paradigm](https://ucla-biostat-212
 Solution:
 
 \(a\)
+
+```{r}
+data("Boston")
+head(Boston$crim)
+
+```
 
 \(b\)
 
