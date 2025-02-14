@@ -263,6 +263,8 @@ Show that in the case of linear model with Gaussian errors, maximum likelihood a
 
 Solution:
 
+![](images/clipboard-1408493893.jpeg)
+
 ## ISL Exercise 6.6.1 (10pts)
 
 ![](images/clipboard-428825808.png){width="601"}
@@ -271,19 +273,41 @@ Solution:
 
 Solution:
 
-\(a\) Best subset selection will yield the smallest training RSS.
+\(a\) **Best subset selection.**
 
-\(b\) Forward stepwise selection will likely yield the smallest test RSS.
+Best subset selection considers all possible combinations of predictors. It will choose the set of $k$ predictors that minimizes the training RSS, so it will likely have the smallest training RSS for any $k$ predictors.
 
-\(c\) i: True;
+Forward stepwise selection starts with no predictors and adds the best predictors one by one. While it tries to improve the fit with each step, it does not consider all possible combinations, so the training RSS might not be as small as the one obtained from best subset selection.
 
-ii: False;
+Backward stepwise regression starts with all predictors and removes the least important ones. While it considers all predictors initially, it may not reach the best combination for $k$ predictors due to its greedy nature, so it might have a larger training RSS than best subset selection.
 
-iii: False;
+\(b\) **Forward stepwise selection.**
 
-iv: True
+While best subset selection minimizes training RSS, it might overfit the training data because it explores all possible models. As a result, it might lead to a more complex model with higher variance and a larger test RSS.
 
-v: True
+Forward stepwise selection builds the model gradually by adding predictors, so it might be less likely to overfit compared to best subset selection. However, it still could lead to a relatively complex model, which might have a larger test RSS if it overfits.
+
+Backward stepwise regression starts with all predictors and removes the least important ones, so it might end up with a simpler model that generalizes better than the other two. Since it begins with a full model and gradually reduces complexity, it may avoid overfitting and result in a smaller test RSS.
+
+\(c\) **i: True**
+
+In forward stepwise selection, the model starts with no predictors and progressively adds the best predictor at each step. Therefore, the $k-variable$ model will be a subset of the $( 𝑘 + 1)-variable$ model since at each step, the new model includes all the predictors of the previous model plus one more.
+
+**ii: False**
+
+The $k-variable$ model is not necessarily a subset of the $(k+1)-variable$ model, because the removal of predictors is based on their importance or performance in the model. For instance, the $k-variable$ model could have a different combination of predictors than the $(k+1)-variable$ model, so it may not be a subset.
+
+**iii: False**
+
+The two methods are different in their approach, and the set of predictors selected by backward stepwise is not necessarily a subset of those selected by forward stepwise. The predictors chosen by each method may differ based on the initial conditions and the way each method evaluates predictor importance.
+
+**iv: False**
+
+Forward stepwise adds predictors gradually, while backward stepwise removes predictors from the full model. The $k-variable$ model selected by forward stepwise does not have to be a subset of the $(k+1)-variable$ model selected by backward stepwise, as the two methods may select different combinations of predictors.
+
+**v: True**
+
+The $k-variable$ model selected by best subset selection will always be a subset of the $(k+1)-variable$ model selected by best subset selection, as the $(k+1)-variable model$ is simply a larger subset of predictors. The $(k+1)-variable model$ is fitted based on previous model ($k-variable$), so it must be the subset of previous model.
 
 ## ISL Exercise 6.6.3 (10pts)
 
@@ -385,13 +409,7 @@ The irreducible error is the noise in the data that cannot be modeled or explain
 
 Solution:
 
-\(a\)
-
-\(b\)
-
-\(c\)
-
-\(d\)
+![](images/clipboard-367222348.jpeg)
 
 ## ISL Exercise 6.6.11 (30pts)
 
