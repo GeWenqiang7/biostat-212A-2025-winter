@@ -22,22 +22,97 @@ knitr:
     cache: false
 ---
 
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+# Load required libraries
+library(rpart)
+library(rpart.plot)
+library(ggplot2)
+```
+
 ## ISL Exercise 8.4.3 (10pts)
 
 ![](images/clipboard-2954413279.png)
+
+------------------------------------------------------------------------
+
+Solution:
+
+```{r}
+# Define probability range for class 1
+p_m1 <- seq(0, 1, length.out = 100)  # Probability values from 0 to 1
+p_m2 <- 1 - p_m1  # Probability of the second class
+
+# Compute the three metrics
+gini_index <- 1 - (p_m1^2 + p_m2^2)  # Gini index formula
+classification_error <- pmin(p_m1, p_m2)  # Classification error (minimum probability)
+entropy <- - (p_m1 * log2(p_m1) + p_m2 * log2(p_m2))  # Entropy formula
+entropy[is.na(entropy)] <- 0  # Handle log(0) cases (replace NaN with 0)
+
+# Create a dataframe with all values
+df <- data.frame(p_m1, gini_index, classification_error, entropy) %>%
+  tidyr::pivot_longer(cols = -p_m1, names_to = "Metric", values_to = "Value")
+
+# Plot the metrics as a function of p_m1
+ggplot(df, aes(x = p_m1, y = Value, color = Metric)) +
+  geom_line(size = 1) +  # Add lines for each metric
+  labs(title = "Gini Index, Classification Error, and Entropy",
+       x = expression(hat(p)[m1]), y = "Value") +
+  theme_minimal()  # Use a clean theme for better visualization
+
+```
 
 ## ISL Exercise 8.4.4 (10pts)
 
 ![](images/clipboard-3811150071.png)
 
+------------------------------------------------------------------------
+
+Solution:
+
+\(a\)
+
+```{r}
+# Create a sample dataset similar to the figure
+set.seed(42)
+data <- data.frame(
+  X1 = runif(100, 0, 1),  # X1 predictor between 0 and 1
+  X2 = runif(100, 0, 1),  # X2 predictor between 0 and 1
+  Y = sample(c(15, 0, 5, 3, 10), 100, replace = TRUE) # Target variable based on regions
+)
+
+# Train a decision tree
+tree_model <- rpart(Y ~ X1 + X2, data = data, method = "anova")
+
+# Visualize the decision tree structure
+rpart.plot(tree_model, main = "Decision Tree Structure")
+
+```
+
+\(b\)
+
 ## ISL Exercise 8.4.5 (10pts)
 
 ![](images/clipboard-946799181.png)
+
+------------------------------------------------------------------------
+
+Solution:
 
 ## ISL Lab 8.3. `Boston` data set (30pts)
 
 Follow the machine learning workflow to train regression tree, random forest, and boosting methods for predicting `medv`. Evaluate out-of-sample performance on a test set.
 
+------------------------------------------------------------------------
+
+Solution:
+
 ## ISL Lab 8.3 `Carseats` data set (30pts)
 
 Follow the machine learning workflow to train classification tree, random forest, and boosting methods for classifying `Sales <= 8` versus `Sales > 8`. Evaluate out-of-sample performance on a test set.
+
+------------------------------------------------------------------------
+
+Solution:
