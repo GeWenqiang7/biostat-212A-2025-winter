@@ -26,10 +26,8 @@ knitr:
 # Load necessary libraries
 library(ggplot2)
 library(dplyr)
-# Load required libraries
 library(rpart)
 library(rpart.plot)
-library(ggplot2)
 ```
 
 ## ISL Exercise 8.4.3 (10pts)
@@ -72,26 +70,7 @@ ggplot(df, aes(x = p_m1, y = Value, color = Metric)) +
 
 Solution:
 
-\(a\)
-
-```{r}
-# Create a sample dataset similar to the figure
-set.seed(42)
-data <- data.frame(
-  X1 = runif(100, 0, 1),  # X1 predictor between 0 and 1
-  X2 = runif(100, 0, 1),  # X2 predictor between 0 and 1
-  Y = sample(c(15, 0, 5, 3, 10), 100, replace = TRUE) # Target variable based on regions
-)
-
-# Train a decision tree
-tree_model <- rpart(Y ~ X1 + X2, data = data, method = "anova")
-
-# Visualize the decision tree structure
-rpart.plot(tree_model, main = "Decision Tree Structure")
-
-```
-
-\(b\)
+![](images/clipboard-721214745.jpeg)
 
 ## ISL Exercise 8.4.5 (10pts)
 
