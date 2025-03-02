@@ -80,6 +80,25 @@ Solution:
 
 Solution:
 
+Given probabilities of $P(Class\ is\ Red∣X)$: 0.1,0.15,0.2,0.2,0.55,0.6,0.6,0.65,0.7,0.75
+
+Majority Vote Approach: Each estimate can be converted into a binary decision by using a threshold of $0.5:$ If $P(Red∣X)≥0.5,$ classify as Red. If $P(Red∣X)<0.5,$classify as Green.
+
+Now, applying this threshold: Green $P<0.5\ :\ 4$ times.
+
+Red $P>= 0.5 :\ 6$ times.
+
+Since Red occurs more often, the majority vote approach classifies Red.
+
+Average Probability Approach:
+
+$\frac{0.1 + 0.15 + 0.2 + 0.2 + 0.55 + 0.6 + 0.6 + 0.65 + 0.7 + 0.75}{10}\ =\ 0.45$\
+Since $0.45 < 0.5,$ the final classification under the average probability approach is Green.
+
+Majority vote: Red
+
+Average probability: Green
+
 ## ISL Lab 8.3. `Boston` data set (30pts)
 
 Follow the machine learning workflow to train regression tree, random forest, and boosting methods for predicting `medv`. Evaluate out-of-sample performance on a test set.
