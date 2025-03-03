@@ -1,0 +1,904 @@
+---
+title: "Biostat 212a Homework 4"
+subtitle: "Due Mar. 4, 2025 @ 11:59PM"
+author: "Wenqiang Ge UID:106371961"
+date: today
+format:
+  # pdf:
+  #   documentclass: article
+  #   toc: true
+  #   toc-depth: 2
+  #   keep-tex: true
+  html:
+    theme: cosmo
+    embed-resources: true
+    number-sections: true
+    toc: true
+    toc-depth: 4
+    toc-location: left
+    code-fold: false
+engine: knitr
+knitr:
+  opts_chunk: 
+    fig.align: 'center'
+    # fig.width: 6
+    # fig.height: 4
+    message: FALSE
+    cache: false
+---
+
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+library(rpart)
+library(rpart.plot)
+library(GGally)
+library(gtsummary)
+library(ranger)
+library(tidyverse)
+library(tidymodels)
+library(ISLR2)
+library(MASS)       
+library(randomForest) 
+library(gbm)      
+library(caret)   
+library(Metrics) 
+library(doParallel)
+library(future)
+library(vip)
+library(xgboost)
+```
+
+## ISL Exercise 8.4.3 (10pts)
+
+![](images/clipboard-2954413279.png)
+
+------------------------------------------------------------------------
+
+Solution:
+
+```{r}
+# Define probability range for class 1
+p_m1 <- seq(0, 1, length.out = 100)  # Probability values from 0 to 1
+p_m2 <- 1 - p_m1  # Probability of the second class
+
+# Compute the three metrics
+gini_index <- 1 - (p_m1^2 + p_m2^2)  # Gini index formula
+classification_error <- pmin(p_m1, p_m2)  # Classification error (minimum probability)
+entropy <- - (p_m1 * log2(p_m1) + p_m2 * log2(p_m2))  # Entropy formula
+entropy[is.na(entropy)] <- 0  # Handle log(0) cases (replace NaN with 0)
+
+# Create a dataframe with all values
+df <- data.frame(p_m1, gini_index, classification_error, entropy) %>%
+  tidyr::pivot_longer(cols = -p_m1, names_to = "Metric", values_to = "Value")
+
+# Plot the metrics as a function of p_m1
+ggplot(df, aes(x = p_m1, y = Value, color = Metric)) +
+  geom_line(size = 1) +  # Add lines for each metric
+  labs(title = "Gini Index, Classification Error, and Entropy",
+       x = expression(hat(p)[m1]), y = "Value") +
+  theme_minimal()  # Use a clean theme for better visualization
+
+```
+
+## ISL Exercise 8.4.4 (10pts)
+
+![](images/clipboard-3811150071.png)
+
+------------------------------------------------------------------------
+
+Solution:
+
+![](images/clipboard-721214745.jpeg)
+
+## ISL Exercise 8.4.5 (10pts)
+
+![](images/clipboard-946799181.png)
+
+------------------------------------------------------------------------
+
+Solution:
+
+Given probabilities of $P(Class\ is\ Red∣X)$: 0.1,0.15,0.2,0.2,0.55,0.6,0.6,0.65,0.7,0.75
+
+Majority Vote Approach: Each estimate can be converted into a binary decision by using a threshold of $0.5:$ If $P(Red∣X)≥0.5,$ classify as Red. If $P(Red∣X)<0.5,$classify as Green.
+
+Now, applying this threshold: Green $P<0.5\ :\ 4$ times.
+
+Red $P>= 0.5 :\ 6$ times.
+
+Since Red occurs more often, the majority vote approach classifies Red.
+
+Average Probability Approach:
+
+$\frac{0.1 + 0.15 + 0.2 + 0.2 + 0.55 + 0.6 + 0.6 + 0.65 + 0.7 + 0.75}{10}\ =\ 0.45$\
+Since $0.45 < 0.5,$ the final classification under the average probability approach is Green.
+
+Majority vote: Red
+
+Average probability: Green
+
+## ISL Lab 8.3. `Boston` data set (30pts)
+
+Follow the machine learning workflow to train regression tree, random forest, and boosting methods for predicting `medv`. Evaluate out-of-sample performance on a test set.
+
+------------------------------------------------------------------------
+
+Solution:
+
+```{r}
+Boston %>% tbl_summary()
+Boston <- Boston %>% filter(!is.na(medv))
+```
+
+### Regression tree
+
+##### Initial split into test and non-test sets
+
+```{r}
+# For reproducibility
+set.seed(203)
+
+data_split <- initial_split(
+  Boston, 
+  prop = 0.5
+  )
+data_split
+
+Boston_other <- training(data_split)
+dim(Boston_other)
+
+Boston_test <- testing(data_split)
+dim(Boston_test)
+```
+
+##### Recipe (R)
+
+```{r}
+# Define an untrained recipe 
+tree_recipe <- recipe(medv ~ ., data = Boston) %>%
+  step_naomit(all_predictors()) %>%       
+  step_dummy(all_nominal_predictors()) %>% 
+  step_zv(all_numeric_predictors()) %>%    
+  step_normalize(all_numeric_predictors())
+
+tree_recipe
+```
+
+##### Model
+
+```{r}
+#Model
+regtree_mod <- decision_tree(
+  cost_complexity = tune(),
+  tree_depth = tune(),
+  min_n = 5,
+  mode = "regression",
+  engine = "rpart"
+  ) 
+```
+
+##### Workflow
+
+```{r}
+#Workflow
+tree_wf <- workflow() %>%
+  add_recipe(tree_recipe) %>%
+  add_model(regtree_mod)
+tree_wf
+```
+
+##### Tuning grid
+
+```{r}
+#Tuning
+tree_grid <- grid_regular(cost_complexity(),
+                          tree_depth(),
+                          levels = c(100, 5))
+```
+
+##### Cross-validation
+
+```{r}
+#Cross-validation
+set.seed(203)
+
+folds <- vfold_cv(Boston_other, v = 5)
+#Fit cross-validation
+tree_fit <- tree_wf %>%
+  tune_grid(
+    resamples = folds,
+    grid = tree_grid,
+    metrics = metric_set(yardstick::rmse, yardstick::rsq)
+    )
+tree_fit
+
+#Visualize CV results
+tree_fit %>%
+  collect_metrics() %>%
+  print(width = Inf) %>%
+  filter(.metric == "rmse") %>%
+  mutate(tree_depth = as.factor(tree_depth)) %>%
+  ggplot(mapping = aes(x = cost_complexity, y = mean, color = tree_depth)) +
+  geom_point() + 
+  geom_line() + 
+  labs(x = "cost_complexity", y = "CV mse")
+```
+
+##### Finalize the model
+
+```{r}
+tree_fit %>%
+  show_best(metric = "rmse", n = 5)
+
+best_tree <- tree_fit %>%
+  select_best(metric = "rmse")
+best_tree
+
+# Final workflow
+final_wf <- tree_wf %>%
+  finalize_workflow(best_tree)
+final_wf
+
+# Fit the whole training set, then predict the test cases
+final_fit <- 
+  final_wf %>%
+  last_fit(data_split)
+final_fit
+
+# Test metrics
+final_fit %>% 
+  collect_metrics()
+```
+
+##### Visualize the final model
+
+```{r}
+final_tree <- extract_workflow(final_fit)
+final_tree
+
+final_tree %>%
+  extract_fit_engine() %>%
+  rpart.plot(roundint = FALSE)
+
+final_tree %>% 
+  extract_fit_parsnip() %>% 
+  vip()
+```
+
+### Random forest
+
+```{r}
+#Recipe
+rf_recipe <- 
+  recipe(
+    medv ~ ., 
+    data = Boston_other
+  ) %>%
+  step_naomit(medv) %>%
+  step_zv(all_numeric_predictors())
+rf_recipe
+
+#Model
+rf_mod <- 
+  rand_forest(
+    mode = "regression",
+    mtry = tune(),
+    trees = tune()
+  ) %>% 
+  set_engine("ranger")
+rf_mod
+
+#Workflow
+rf_wf <- workflow() %>%
+  add_recipe(rf_recipe) %>%
+  add_model(rf_mod)
+rf_wf
+
+#Tuning
+param_grid <- grid_regular(
+  trees(range = c(100L, 300L)), 
+  mtry(range = c(1L, 5L)),
+  levels = c(3, 5)
+  )
+param_grid
+```
+
+```{r}
+#Cross-validation
+set.seed(203)
+
+folds <- vfold_cv(Boston_other, v = 5)
+folds
+
+rf_fit <- rf_wf %>%
+  tune_grid(
+    resamples = folds,
+    grid = param_grid,
+    metrics = metric_set(yardstick::rmse, yardstick::rsq)
+    )
+rf_fit
+```
+
+```{r}
+rf_fit %>%
+  collect_metrics() %>%
+  print(width = Inf) %>%
+  filter(.metric == "rmse") %>%
+  mutate(mtry = as.factor(mtry)) %>%
+  ggplot(mapping = aes(x = trees, y = mean, color = mtry)) +
+  # geom_point() + 
+  geom_line() + 
+  labs(x = "Num. of Trees", y = "CV mse")
+```
+
+```{r}
+rf_fit %>%
+  show_best(metric = "rmse")
+
+best_rf <- rf_fit %>%
+  select_best(metric = "rmse")
+best_rf
+
+# Final workflow
+final_wf <- rf_wf %>%
+  finalize_workflow(best_rf)
+final_wf
+
+# Fit the whole training set, then predict the test cases
+final_fit <- 
+  final_wf %>%
+  last_fit(data_split)
+final_fit
+
+# Test metrics
+final_fit %>% 
+  collect_metrics()
+```
+
+### Boosting methods
+
+##### Recipe (R)
+
+```{r}
+#Recipe
+gb_recipe <- 
+  recipe(
+    medv ~ ., 
+    data = Boston_other
+  ) %>%
+  step_naomit(medv) %>%
+  step_zv(all_numeric_predictors())
+gb_recipe
+
+```
+
+##### Model
+
+```{r}
+#Model
+gb_mod <- 
+  boost_tree(
+    mode = "regression",
+    trees = 1000, 
+    tree_depth = tune(),
+    learn_rate = tune()
+  ) %>% 
+  set_engine("xgboost")
+gb_mod
+```
+
+##### Workflow & Tuning
+
+```{r}
+#Workflow
+gb_wf <- workflow() %>%
+  add_recipe(gb_recipe) %>%
+  add_model(gb_mod)
+gb_wf
+
+#Tuning
+param_grid <- grid_regular(
+  tree_depth(range = c(1L, 4L)),
+  learn_rate(range = c(-3, -0.5), trans = log10_trans()),
+  levels = c(4, 10)
+  )
+param_grid
+```
+
+##### Cross-validation
+
+```{r boostCV}
+#Cross-validation
+set.seed(203)
+
+folds <- vfold_cv(Boston_other, v = 5)
+folds
+
+gb_fit <- gb_wf %>%
+  tune_grid(
+    resamples = folds,
+    grid = param_grid,
+    metrics = metric_set(yardstick::rmse, yardstick::rsq)
+    )
+gb_fit
+
+gb_fit %>%
+  collect_metrics() %>%
+  print(width = Inf) %>%
+  filter(.metric == "rmse") %>%
+  ggplot(mapping = aes(x = learn_rate, y = mean, color = factor(tree_depth))) +
+  geom_point() +
+  geom_line() +
+  labs(x = "Learning Rate", y = "CV AUC") +
+  scale_x_log10()
+
+gb_fit %>%
+  show_best(metric = "rmse")
+
+best_gb <- gb_fit %>%
+  select_best(metric = "rmse")
+best_gb
+```
+
+##### Finalize the model
+
+```{r}
+#Final model
+final_wf <- gb_wf %>%
+  finalize_workflow(best_gb)
+final_wf
+
+final_fit <- 
+  final_wf %>%
+  last_fit(data_split)
+final_fit
+
+final_fit %>% 
+  collect_metrics()
+
+
+```
+
+##### Visualize the final model
+
+```{r}
+#Visualize the final model
+final_tree <- extract_workflow(final_fit)
+final_tree
+
+final_tree %>% 
+  extract_fit_parsnip() %>% 
+  vip()
+```
+
+### Conclusion
+
+Considering the values of RMSE of each model, the random forest model has the lowest one ,so we can choose it as the final model.
+
+## ISL Lab 8.3 `Carseats` data set (30pts)
+
+Follow the machine learning workflow to train classification tree, random forest, and boosting methods for classifying `Sales <= 8` versus `Sales > 8`. Evaluate out-of-sample performance on a test set.
+
+------------------------------------------------------------------------
+
+Solution:
+
+```{r}
+# load the data
+data("Carseats", package = "ISLR")
+Carseats$AHD <- ifelse(Carseats$Sales > 8, "High", "Low")
+Carseats$AHD <- as.factor(Carseats$AHD) 
+Carseats <- Carseats[, !names(Carseats) %in% c("Sales")]
+Carseats %>% tbl_summary()
+```
+
+### Classification tree
+
+##### Initial split into test and non-test sets
+
+```{r}
+#Initial split into test and non-test sets
+set.seed(212)
+data_split <- initial_split(
+  Carseats, 
+  prop = 0.5,
+  strata = AHD
+  )
+data_split
+
+Carseats_other <- training(data_split)
+dim(Carseats_other)
+
+Carseats_test <- testing(data_split)
+dim(Carseats_test)
+```
+
+##### Recipe
+
+```{r}
+#Recipe
+tree_recipe <- 
+  recipe(
+    AHD ~ ., 
+    data = Carseats_other
+  ) %>%
+  step_naomit(all_predictors()) %>%
+  # create traditional dummy variables (not necessary for random forest in R)
+  step_dummy(all_nominal_predictors()) %>%
+  # zero-variance filter
+  step_zv(all_numeric_predictors()) %>% 
+  # # center and scale numeric data (not necessary for random forest)
+  step_normalize(all_numeric_predictors()) 
+
+tree_recipe
+```
+
+##### Model & Workflow
+
+```{r}
+#Model
+classtree_mod <- decision_tree(
+   # Hyperparameter: Complexity parameter (cp) for pruning
+  cost_complexity = tune(),
+  # Hyperparameter: Maximum depth of the tree
+  tree_depth = tune(),
+  min_n = 5,
+  mode = "classification",
+  engine = "rpart"
+  ) 
+
+#Workflow
+tree_wf <- workflow() %>%
+  add_recipe(tree_recipe) %>%
+  add_model(classtree_mod) 
+
+# Print the workflow structure
+tree_wf
+```
+
+##### Tuning grid
+
+```{r}
+#Tuning
+tree_grid <- grid_regular(cost_complexity(),
+                          tree_depth(),
+                          levels = c(100,5))
+```
+
+##### Cross-validation (CV)
+
+```{r}
+set.seed(212)
+
+folds <- vfold_cv(Carseats_other, v = 5)
+folds
+# Register a parallel backend using future
+plan(multisession, workers = parallel::detectCores() - 1)
+
+# Fit cross-validation.
+tree_fit <- tree_wf %>%
+  tune_grid(
+    resamples = folds,
+    grid = tree_grid,
+    metrics = metric_set(yardstick::accuracy, yardstick::roc_auc),
+    control = control_grid(save_pred = TRUE, parallel_over = "resamples")
+  )
+
+# Stop parallel processing after computation
+plan(sequential)  # Reset to sequential processing after tuning
+
+tree_fit
+
+```
+
+##### Visualize CV results
+
+```{r}
+tree_fit %>%
+  collect_metrics() %>%
+  print(width = Inf) %>%
+  filter(.metric == "roc_auc") %>%
+  mutate(tree_depth = as.factor(tree_depth)) %>%
+  ggplot(mapping = aes(x = cost_complexity, y = mean, color = tree_depth)) +
+  geom_point() + 
+  geom_line() + 
+  labs(x = "cost_complexity", y = "CV ROC AUC", color = "tree_depth") 
+```
+
+##### Finalize the model
+
+```{r}
+tree_fit %>%
+  show_best(metric = "roc_auc", n = 5)  
+# select the best model.
+best_tree <- tree_fit %>%
+  select_best(metric = "roc_auc")
+best_tree 
+
+# Final workflow
+final_wf <- tree_wf %>%
+  finalize_workflow(best_tree)
+final_wf
+
+```
+
+##### Visualize the final model
+
+```{r}
+# Fit the whole training set, then predict the test cases
+final_fit <- 
+  final_wf %>%
+  last_fit(data_split)
+final_fit
+
+# Test metrics
+final_fit %>% 
+  collect_metrics()
+
+final_tree <- extract_workflow(final_fit)
+final_tree
+
+final_tree %>%
+  extract_fit_engine() %>%
+  rpart.plot(roundint = FALSE)
+
+final_tree %>% 
+  extract_fit_parsnip() %>% 
+  vip()
+```
+
+### Random forest
+
+##### Initial split into test and non-test sets
+
+```{r}
+#Initial split into test and non-test sets
+set.seed(212)
+
+data_split <- initial_split(
+  Carseats, 
+  prop = 0.75,
+  strata = AHD
+  )
+data_split
+
+Carseats_other <- training(data_split)
+dim(Carseats_other)
+
+Carseats_test <- testing(data_split)
+dim(Carseats_test)
+
+```
+
+##### Recipe (R)
+
+```{r}
+#Recipe
+rf_recipe <- 
+  recipe(
+    AHD ~ ., 
+    data = Carseats_other
+  ) %>%
+  step_zv(all_numeric_predictors())
+rf_recipe
+```
+
+##### Model
+
+```{r}
+#Model
+rf_mod <- 
+  rand_forest(
+    mode = "classification",
+    mtry = tune(),
+    trees = tune()
+  ) %>% 
+  set_engine("ranger")
+rf_mod
+```
+
+##### Work & Tuning
+
+```{r}
+#Workflow
+rf_wf <- workflow() %>%
+  add_recipe(rf_recipe) %>%
+  add_model(rf_mod)
+rf_wf
+
+#Tuning
+param_grid <- grid_regular(
+  trees(range = c(100L, 300L)), 
+  mtry(range = c(1L, 5L)),
+  levels = c(3, 5)
+  )
+param_grid
+```
+
+##### Cross-validation (CV)
+
+```{r}
+#Cross-validation
+set.seed(203)
+
+folds <- vfold_cv(Carseats_other, v = 5)
+folds
+
+#Fit cross-validation
+rf_fit <- rf_wf %>%
+  tune_grid(
+    resamples = folds,
+    grid = param_grid,
+    metrics = metric_set(yardstick::roc_auc,
+                         yardstick::accuracy)
+    )
+rf_fit
+
+#Visualize CV results
+rf_fit %>%
+  collect_metrics() %>%
+  print(width = Inf) %>%
+  filter(.metric == "roc_auc") %>%
+  mutate(mtry = as.factor(mtry)) %>%
+  ggplot(mapping = aes(x = trees, y = mean, color = mtry)) +
+  # geom_point() + 
+  geom_line() + 
+  labs(x = "Num. of Trees", y = "CV AUC")
+
+#Show the top 5 models.
+rf_fit %>%
+  show_best(metric = "roc_auc")
+
+#Select the best model
+best_rf <- rf_fit %>%
+  select_best(metric = "roc_auc")
+best_rf
+```
+
+##### Finalize the model
+
+```{r}
+#Final model
+final_wf <- rf_wf %>%
+  finalize_workflow(best_rf)
+final_wf
+
+final_fit <- 
+  final_wf %>%
+  last_fit(data_split)
+final_fit
+
+final_fit %>% 
+  collect_metrics()
+```
+
+### Boosting methods
+
+##### Initial split into test and non-test sets
+
+```{r}
+library(xgboost)
+#Initial split into test and non-test sets
+set.seed(212)
+
+data_split <- initial_split(
+  Carseats, 
+  prop = 0.75,
+  strata = AHD
+  )
+data_split
+
+Carseats_other <- training(data_split)
+dim(Carseats_other)
+
+Carseats_test <- testing(data_split)
+dim(Carseats_test)
+```
+
+##### Recipe (R)
+
+```{r}
+#Recipe
+gb_recipe <- 
+  recipe(
+    AHD ~ ., 
+    data = Carseats_other
+  ) %>%
+  step_dummy(all_nominal_predictors()) %>%
+  step_zv(all_numeric_predictors())
+gb_recipe
+```
+
+##### Model
+
+```{r}
+#Model
+gb_mod <- 
+  boost_tree(
+    mode = "classification",
+    trees = 1000, 
+    tree_depth = tune(),
+    learn_rate = tune()
+  ) %>% 
+  set_engine("xgboost")
+gb_mod
+```
+
+##### Workflow & Tuning
+
+```{r}
+#Workflow
+gb_wf <- workflow() %>%
+  add_recipe(gb_recipe) %>%
+  add_model(gb_mod)
+gb_wf
+
+#Tuning
+param_grid <- grid_regular(
+  tree_depth(range = c(1L, 3L)),
+  learn_rate(range = c(-5, 2), trans = log10_trans()),
+  levels = c(3, 10)
+  )
+param_grid
+```
+
+##### Cross-validation
+
+```{r}
+#Cross-validation
+set.seed(203)
+
+folds <- vfold_cv(Carseats_other, v = 5)
+folds
+
+gb_fit <- gb_wf %>%
+  tune_grid(
+    resamples = folds,
+    grid = param_grid,
+    metrics = metric_set(yardstick::roc_auc,
+                         yardstick::accuracy)
+    )
+gb_fit
+
+gb_fit %>%
+  collect_metrics() %>%
+  print(width = Inf) %>%
+  filter(.metric == "roc_auc") %>%
+  mutate(tree_depth = as.factor(tree_depth)) %>%
+  ggplot(mapping = aes(x = learn_rate, y = mean, color = tree_depth)) +
+  geom_point() +
+  geom_line() +
+  labs(x = "Learning Rate", y = "CV AUC") +
+  scale_x_log10()
+
+gb_fit %>%
+  show_best(metric = "roc_auc")
+
+#select the best model
+best_gb <- gb_fit %>%
+  select_best(metric = "roc_auc")
+best_gb
+```
+
+##### Finalize the model
+
+```{r}
+#Final model
+final_wf <- gb_wf %>%
+  finalize_workflow(best_gb)
+final_wf
+
+final_fit <- 
+  final_wf %>%
+  last_fit(data_split)
+final_fit
+
+final_fit %>% 
+  collect_metrics()
+```
+
+### Conclusion
+
+We choose the boosting method as the final model for classifying Sales in the Carseats data set, because it has the highest accuracy and roc_auc.
