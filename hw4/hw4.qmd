@@ -127,7 +127,7 @@ Boston %>% tbl_summary()
 Boston <- Boston %>% filter(!is.na(medv))
 ```
 
-### Regression tree:
+### Regression tree
 
 ##### Initial split into test and non-test sets
 
@@ -262,7 +262,7 @@ final_tree %>%
   vip()
 ```
 
-### Random forest:
+### Random forest
 
 ```{r}
 #Recipe
@@ -352,7 +352,7 @@ final_fit %>%
   collect_metrics()
 ```
 
-### Boosting methods:
+### Boosting methods
 
 ##### Recipe (R)
 
@@ -468,6 +468,10 @@ final_tree %>%
   vip()
 ```
 
+### Conclusion
+
+Considering the values of RMSE of each model, the random forest model has the lowest one ,so we can choose it as the final model.
+
 ## ISL Lab 8.3 `Carseats` data set (30pts)
 
 Follow the machine learning workflow to train classification tree, random forest, and boosting methods for classifying `Sales <= 8` versus `Sales > 8`. Evaluate out-of-sample performance on a test set.
@@ -485,7 +489,7 @@ Carseats <- Carseats[, !names(Carseats) %in% c("Sales")]
 Carseats %>% tbl_summary()
 ```
 
-### Classification tree:
+### Classification tree
 
 ##### Initial split into test and non-test sets
 
@@ -640,7 +644,7 @@ final_tree %>%
   vip()
 ```
 
-### Random forest:
+### Random forest
 
 ##### Initial split into test and non-test sets
 
@@ -765,7 +769,7 @@ final_fit %>%
   collect_metrics()
 ```
 
-### Boosting methods:
+### Boosting methods
 
 ##### Initial split into test and non-test sets
 
@@ -889,3 +893,7 @@ final_fit
 final_fit %>% 
   collect_metrics()
 ```
+
+### Conclusion
+
+We choose the boosting method as the final model for classifying Sales in the Carseats data set, because it has the highest accuracy and roc_auc.
