@@ -4,6 +4,11 @@ subtitle: "Due Mar. 4, 2025 @ 11:59PM"
 author: "Wenqiang Ge UID:106371961"
 date: today
 format:
+  # pdf:
+  #   documentclass: article
+  #   toc: true
+  #   toc-depth: 2
+  #   keep-tex: true
   html:
     theme: cosmo
     embed-resources: true
