@@ -1,7 +1,7 @@
 ---
 title: "Biostat 212a Homework 5"
 subtitle: "Due Mar 16, 2024 @ 11:59PM"
-author: "YOUR NAME and UID"
+author: "Wenqiang Ge UID:106371961"
 date: today
 format:
   html:
@@ -50,25 +50,23 @@ hyperplane_2 <- function(X1) { (-2 + X1) / 2 }
 
 # 计算对应的 X2 值
 points$hyperplane_1_result <- 1 + 3*points$X1 - points$X2
-points$hyperplane_2_result <- -2 + points$X1 + 2*points$X2
 
 # 为每个点分配分类标签
 points$region_1 <- ifelse(points$hyperplane_1_result > 0, "1 + 3X1 - X2 > 0", "1 + 3X1 - X2 < 0")
-points$region_2 <- ifelse(points$hyperplane_2_result > 0, "-2 + X1 + 2X2 > 0", "-2 + X1 + 2X2 < 0")
 
 # 合并两个标签，用来区分不同区域的点
-points$final_region <- paste(points$region_1, points$region_2)
+points$final_region <- paste(points$region_1)
 
 # 绘制图形
 ggplot(points) +
   # 绘制随机点
   geom_point(aes(x = X1, y = X2, color = final_region), size = 3) +
   # 绘制超平面线
-  geom_abline(intercept = 1, slope = 3, color = "blue", size = 1) +  # 1 + 3X1 - X2 = 0
+  geom_abline(intercept = 1, slope = 3, color = "yellow", size = 1) +  # 1 + 3X1 - X2 = 0
   labs(title = "Hyperplane Plot with Random Points", x = "X1", y = "X2") + 
   theme_minimal() +
   theme(legend.position = "top") + 
-  scale_color_manual(values = c("yellow", "red", "purple", "blue"))  # Set 4 colors for the regions
+  scale_color_manual(values = c("blue", "red"))  # Set 4 colors for the regions
 
 
 ```
@@ -76,43 +74,45 @@ ggplot(points) +
 \(b\)
 
 ```{r}
-# 加载库
-library(ggplot2)
-library(dplyr)
-
-# 生成随机点
 set.seed(123)  # For reproducibility
 points <- data.frame(
   X1 = runif(100, min = -5, max = 5),  # Random X1 values
   X2 = runif(100, min = -5, max = 5)   # Random X2 values
 )
 
-# 定义超平面方程
+# Define hyperplane equations
 hyperplane_1 <- function(X1) { 1 + 3*X1 }
 hyperplane_2 <- function(X1) { (-2 + X1) / 2 }
 
-# 计算对应的 X2 值
+# Calculate corresponding X2 values
 points$hyperplane_1_result <- 1 + 3*points$X1 - points$X2
 points$hyperplane_2_result <- -2 + points$X1 + 2*points$X2
 
-# 为每个点分配分类标签
+# Assign category labels for each point
 points$region_1 <- ifelse(points$hyperplane_1_result > 0, "1 + 3X1 - X2 > 0", "1 + 3X1 - X2 < 0")
 points$region_2 <- ifelse(points$hyperplane_2_result > 0, "-2 + X1 + 2X2 > 0", "-2 + X1 + 2X2 < 0")
 
-# 合并两个标签，用来区分不同区域的点
+# Combine both labels to distinguish different regions of the points
 points$final_region <- paste(points$region_1, points$region_2)
 
-# 绘制图形
+# Plot
 ggplot(points) +
-  # 绘制随机点
-  geom_point(aes(x = X1, y = X2, color = final_region), size = 3) +
-  # 绘制超平面线
-  geom_abline(intercept = 1, slope = 3, color = "blue", size = 1) +  # 1 + 3X1 - X2 = 0
-  geom_abline(intercept = -2, slope = -1/2, color = "green", size = 1) +  # -2 + X1 + 2X2 = 0
-  labs(title = "Hyperplane Plot with Random Points", x = "X1", y = "X2") + 
-  theme_minimal() +
-  theme(legend.position = "top") + 
-  scale_color_manual(values = c("yellow", "red", "purple", "blue"))  # Set 4 colors for the regions
+  geom_point(aes(x = X1, y = X2, color = final_region), size = 3) +  # Random points with color based on regions
+  geom_abline(intercept = 1, slope = 3, color = "yellow", size = 1, show.legend = FALSE) +  # Hyperplane 1 without legend
+  geom_abline(intercept = -2, slope = -1/2, color = "green", size = 1, show.legend = FALSE) +  # Hyperplane 2 without legend
+  labs(title = "Hyperplane Plot with Random Points", x = "X1", y = "X2") +
+  scale_color_manual(values = c("blue", "red", "purple", "gray")) +  # Set 4 colors for the regions
+  theme_minimal() + 
+  theme(
+    legend.position = "right", 
+    legend.title = element_blank(),
+    legend.text = element_text(size = 7),  # Smaller text for labels
+    legend.key.size = unit(0.4, "cm"),  # Adjust legend key size for better spacing
+    legend.direction = "vertical",  # Arrange labels vertically
+    legend.box = "vertical",  # Stack the labels vertically
+    plot.margin = margin(10, 10, 10, 10),  # Adjust margins to give more space
+    aspect.ratio = 0.8  # Increase the size of the plot
+  )
 
 
 ```
