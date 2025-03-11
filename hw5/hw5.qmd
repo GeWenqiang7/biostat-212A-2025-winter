@@ -24,7 +24,7 @@ knitr:
 
 ## ISL Exercise 9.7.1 (10pts)
 
-## ![](images/clipboard-2052603752.png)
+![](images/clipboard-2052603752.png)
 
 ------------------------------------------------------------------------
 
@@ -33,40 +33,40 @@ Solution:
 \(a\)
 
 ```{r}
-# 加载库
+# Load necessary libraries
 library(ggplot2)
 library(dplyr)
 
-# 生成随机点
+# Generate random points
 set.seed(123)  # For reproducibility
 points <- data.frame(
   X1 = runif(100, min = -5, max = 5),  # Random X1 values
   X2 = runif(100, min = -5, max = 5)   # Random X2 values
 )
 
-# 定义超平面方程
-hyperplane_1 <- function(X1) { 1 + 3*X1 }
-hyperplane_2 <- function(X1) { (-2 + X1) / 2 }
+# Define hyperplane equation
+hyperplane_1 <- function(X1) { 1 + 3*X1 }  # Equation for hyperplane 1
 
-# 计算对应的 X2 值
-points$hyperplane_1_result <- 1 + 3*points$X1 - points$X2
+# Calculate the corresponding values of X2
+points$hyperplane_1_result <- 1 + 3*points$X1 - points$X2  # Evaluate the hyperplane equation
 
-# 为每个点分配分类标签
+# Assign category labels for each point based on hyperplane condition
 points$region_1 <- ifelse(points$hyperplane_1_result > 0, "1 + 3X1 - X2 > 0", "1 + 3X1 - X2 < 0")
 
-# 合并两个标签，用来区分不同区域的点
+# Combine the region labels to distinguish the points based on the regions
 points$final_region <- paste(points$region_1)
 
-# 绘制图形
+# Create the plot
 ggplot(points) +
-  # 绘制随机点
+  # Plot random points with color based on region
   geom_point(aes(x = X1, y = X2, color = final_region), size = 3) +
-  # 绘制超平面线
-  geom_abline(intercept = 1, slope = 3, color = "yellow", size = 1) +  # 1 + 3X1 - X2 = 0
-  labs(title = "Hyperplane Plot with Random Points", x = "X1", y = "X2") + 
-  theme_minimal() +
-  theme(legend.position = "top") + 
-  scale_color_manual(values = c("blue", "red"))  # Set 4 colors for the regions
+  # Plot the hyperplane line
+  geom_abline(intercept = 1, slope = 3, color = "yellow", size = 1) +  # Hyperplane: 1 + 3X1 - X2 = 0
+  labs(title = "Hyperplane Plot with Random Points", x = "X1", y = "X2") +  # Set plot title and axis labels
+  theme_minimal() +  # Use minimal theme for cleaner plot
+  theme(legend.position = "top") +  # Position the legend at the top
+  scale_color_manual(values = c("blue", "red"))  # Set colors for the regions
+
 
 
 ```
@@ -125,6 +125,114 @@ ggplot(points) +
 
 Solution:
 
+\(a\)
+
+```{r}
+# Define the circle equation
+circle_eq <- function(X1) {
+  sqrt(4 - (X1 + 1)^2) + 2  # Solve for X2
+}
+
+# Create X1 values and calculate corresponding X2 values
+X1_values <- seq(-3, 1, by = 0.1)
+X2_values_positive <- sapply(X1_values, function(X1) circle_eq(X1))
+X2_values_negative <- sapply(X1_values, function(X1) -circle_eq(X1) + 4)
+
+# Create a data frame
+circle_data <- data.frame(X1 = rep(X1_values, 2),
+                          X2 = c(X2_values_positive, X2_values_negative),
+                          Type = rep(c("Upper half", "Lower half"), each = length(X1_values)))
+
+# Plot the circle
+ggplot(circle_data, aes(x = X1, y = X2, color = Type)) +
+  geom_line() +
+  labs(title = "Plot of the Circle (1 + X1)^2 + (2 - X2)^2 = 4", x = "X1", y = "X2") +
+  theme_minimal() +
+  scale_color_manual(values = c("blue", "red")) +
+  coord_fixed(ratio = 1) 
+
+
+```
+
+\(b\)
+
+```{r}
+# Define random points to classify as inside or outside the circle
+set.seed(213)  # For reproducibility
+points <- data.frame(
+  X1 = runif(200, min = -4, max = 2),  # Random X1 values
+  X2 = runif(200, min = -1, max = 5)   # Random X2 values
+)
+
+# Calculate the circle equation for each point
+points$circle_equation <- (1 + points$X1)^2 + (2 - points$X2)^2
+
+# Assign categories based on whether points are inside or outside the circle
+points$region <- ifelse(points$circle_equation <= 4, "Inside the Circle", "Outside the Circle")
+
+# Plot the circle and points with different colors for the regions
+ggplot() +
+  geom_line(data = circle_data, aes(x = X1, y = X2, color = Type), size = 1) +  # Circle
+  geom_point(data = points, aes(x = X1, y = X2, color = region), size = 2) +  # Points inside and outside the circle
+  labs(title = "Plot of the Circle (1 + X1)^2 + (2 - X2)^2 = 4", x = "X1", y = "X2") +
+  scale_color_manual(values = c("yellow", "blue", "green", "red")) +  # Added color for all regions
+  theme_minimal() +
+  coord_fixed(ratio = 1)  
+
+```
+
+\(c\)
+
+```{r}
+# Define the circle equation
+circle_eq <- function(X1) {
+  sqrt(4 - (X1 + 1)^2) + 2  # Solve for X2
+}
+
+# Create X1 values and calculate corresponding X2 values
+X1_values <- seq(-3, 1, by = 0.1)
+X2_values_positive <- sapply(X1_values, function(X1) circle_eq(X1))
+X2_values_negative <- sapply(X1_values, function(X1) -circle_eq(X1) + 4)
+
+# Create a data frame for the circle
+circle_data <- data.frame(X1 = rep(X1_values, 2),
+                          X2 = c(X2_values_positive, X2_values_negative),
+                          Type = rep(c("Upper half", "Lower half"), each = length(X1_values)))
+
+# Points for classification
+specific_points <- data.frame(
+  X1 = c(0, -1, 2, 3),  # X1 values
+  X2 = c(2, 1, 2, 8)    # X2 values
+)
+
+# Classify the points
+specific_points$classification <- ifelse(
+  (1 + specific_points$X1)^2 + (2 - specific_points$X2)^2 > 4, "(1 + X1)^2 + (2 - X2)^2 > 4", "(1 + X1)^2 + (2 - X2)^2 ≤ 4"
+)
+
+# Plot the circle and points with different colors for the regions
+ggplot() +
+  geom_line(data = circle_data, aes(x = X1, y = X2, color = Type), size = 1
+            ) +  # Plot circle
+  geom_point(data = specific_points, aes(x = X1, y = X2, color = classification), size = 3) +  # Plot classified points
+  labs(title = "Classified Points for the Circle Equation", x = "X1", y = "X2") +
+  scale_color_manual(values = c("(1 + X1)^2 + (2 - X2)^2 > 4" = "blue", "(1 + X1)^2 + (2 - X2)^2 ≤ 4" = "red")) +  # Set colors for blue and red
+  theme_minimal() +
+  coord_fixed(ratio =1)
+
+
+```
+
+\(d\) The decision boundary in part (c) is given by the equation:\$(1+X_1)^2+(2-X_2)^2 = 4 \$. After expand above equation, we get:
+
+$1+{X_1}^2+2X_1+4+{X_2}^2-4X_2 = 4$
+
+${X_1}^2+{X_2}^2+2X_1-4X_2 = 0$
+
+In this equation, we have these items $X_1,X_2,{X_1}^2,{X_2}^2$.
+
+This shows that the decision boundary is quadratic when expressed in terms of the original features $X_1$ and $X_2$. However, if we introduce new features such as ${X_1}^2$ and ${X_2}^2}$ (which are the squared versions of $X_1$ and $X_2$), the decision boundary becomes linear in terms of these new features because the equation will now only involve linear terms in $X_1$, $X_2$, ${X_1}^2$, and ${X_2}^2$.
+
 ## Support vector machines (SVMs) on the `Carseats` data set (30pts)
 
 Follow the machine learning workflow to train support vector classifier (same as SVM with linear kernel), SVM with polynomial kernel (tune the degree and regularization parameter $C$), and SVM with radial kernel (tune the scale parameter $\gamma$ and regularization parameter $C$) for classifying `Sales<=8` versus `Sales>8`. Use the same seed as in your HW4 for the initial test/train split and compare the final test AUC and accuracy to those methods you tried in HW4.
@@ -132,6 +240,54 @@ Follow the machine learning workflow to train support vector classifier (same as
 ------------------------------------------------------------------------
 
 Solution:
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(rpart)
+library(rpart.plot)
+library(GGally)
+library(gtsummary)
+library(ranger)
+library(tidyverse)
+library(tidymodels)
+library(ISLR2)
+library(MASS)       
+```
+
+```{r}
+# load the data
+data("Carseats", package = "ISLR")
+Carseats$AHD <- ifelse(Carseats$Sales > 8, "High", "Low")
+Carseats$AHD <- as.factor(Carseats$AHD) 
+Carseats <- Carseats[, !names(Carseats) %in% c("Sales")]
+Carseats %>% tbl_summary()
+```
+
+### SVM with linear kernel
+
+```{r}
+#Initial split into test and non-test sets
+set.seed(212)
+data_split <- initial_split(
+  Carseats, 
+  prop = 0.5,
+  strata = AHD
+  )
+data_split
+```
+
+### SVM with polynomial kernel
+
+```{r}
+
+```
+
+### SVM with radial kernel
+
+```{r}
+
+```
 
 ## Bonus (10pts)
 
