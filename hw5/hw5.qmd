@@ -712,7 +712,3 @@ svm_rbf_fit %>%
 Let $$
 f(X) = \beta_0 + \beta_1 X_1 + \cdots + \beta_p X_p = \beta_0 + \beta^T X. 
 $$ Then $f(X)=0$ defines a hyperplane in $\mathbb{R}^p$. Show that $f(x)$ is proportional to the signed distance of a point $x$ to the hyperplane $f(X) = 0$.
-
-------------------------------------------------------------------------
-
-Solution:
