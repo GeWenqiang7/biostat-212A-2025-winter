@@ -4,14 +4,19 @@ subtitle: "Due Mar 16, 2024 @ 11:59PM"
 author: "Wenqiang Ge UID:106371961"
 date: today
 format:
-  html:
-    theme: cosmo
-    embed-resources: true
-    number-sections: true
+  pdf:
+    documentclass: article
     toc: true
-    toc-depth: 4
-    toc-location: left
-    code-fold: false
+    toc-depth: 2
+    keep-tex: true
+  # html:
+  #   theme: cosmo
+  #   embed-resources: true
+  #   number-sections: true
+  #   toc: true
+  #   toc-depth: 4
+  #   toc-location: left
+  #   code-fold: false
 engine: knitr
 knitr:
   opts_chunk: 
@@ -223,7 +228,7 @@ ggplot() +
 
 ```
 
-\(d\) The decision boundary in part (c) is given by the equation:\$(1+X_1)^2+(2-X_2)^2 = 4 \$. After expand above equation, we get:
+\(d\) The decision boundary in part (c) is given by the equation:$(1+X_1)^2+(2-X_2)^2 = 4$. After expand above equation, we get:
 
 $1+{X_1}^2+2X_1+4+{X_2}^2-4X_2 = 4$
 
@@ -231,7 +236,7 @@ ${X_1}^2+{X_2}^2+2X_1-4X_2 = 0$
 
 In this equation, we have these items $X_1,X_2,{X_1}^2,{X_2}^2$.
 
-This shows that the decision boundary is quadratic when expressed in terms of the original features $X_1$ and $X_2$. However, if we introduce new features such as ${X_1}^2$ and ${X_2}^2}$ (which are the squared versions of $X_1$ and $X_2$), the decision boundary becomes linear in terms of these new features because the equation will now only involve linear terms in $X_1$, $X_2$, ${X_1}^2$, and ${X_2}^2$.
+This shows that the decision boundary is quadratic when expressed in terms of the original features $X_1$ and $X_2$. However, if we introduce new features such as ${X_1}^2$ and ${X_2}^2$ (which are the squared versions of $X_1$ and $X_2$), the decision boundary becomes linear in terms of these new features because the equation will now only involve linear terms in $X_1$, $X_2$, ${X_1}^2$, and ${X_2}^2$.
 
 ## Support vector machines (SVMs) on the `Carseats` data set (30pts)
 
@@ -418,14 +423,17 @@ final_linear_fit %>%
 ```
 
 ```{r}
-svm_rbf_spec <- svm_rbf() %>%
+# Use svm_linear() for linear kernel SVM
+svm_linear_spec <- svm_linear() %>%
   set_mode("classification") %>%
   set_engine("kernlab")
 
-svm_rbf_fit <- svm_rbf_spec %>%
-  fit(Sales ~ ., data = train[, c('Price','ShelveLoc_Good','Sales')])
+# Fit the model with linear kernel
+svm_linear_fit <- svm_linear_spec %>%
+  fit(Sales ~ ., data = train[, c('Price', 'ShelveLoc_Good', 'Sales')])
 
-svm_rbf_fit %>%
+# Visualize the decision boundary
+svm_linear_fit %>%
   extract_fit_engine() %>%
   plot()
 ```
@@ -454,7 +462,7 @@ svm_wf
 
 ```{r}
 param_grid <- grid_regular(
-  cost(range = c(-3, 2)),
+  cost(range = c(-3, 3)),
   degree(range = c(1, 5)),
   levels = c(5)
   )
@@ -553,12 +561,13 @@ final_fit %>%
 ```
 
 ```{r}
+# Use svm_poly() for polynomial kernel SVM
 svm_rbf_spec <- svm_rbf() %>%
   set_mode("classification") %>%
   set_engine("kernlab")
 
 svm_rbf_fit <- svm_rbf_spec %>%
-  fit(Sales ~ ., data = train[, c('Price','ShelveLoc_Good','Sales')])
+  fit(Sales ~ ., data = train[, c('Price', 'ShelveLoc_Good', 'Sales')])
 
 svm_rbf_fit %>%
   extract_fit_engine() %>%
@@ -695,17 +704,26 @@ final_fit %>%
 ```
 
 ```{r}
+# Use svm_rbf() for RBF kernel SVM
 svm_rbf_spec <- svm_rbf() %>%
   set_mode("classification") %>%
   set_engine("kernlab")
 
+# Fit the model with RBF kernel
 svm_rbf_fit <- svm_rbf_spec %>%
-  fit(Sales ~ ., data = train[, c('Price','ShelveLoc_Good','Sales')])
+  fit(Sales ~ ., data = train[, c('Price', 'ShelveLoc_Good', 'Sales')])
 
+# Visualize the decision boundary
 svm_rbf_fit %>%
   extract_fit_engine() %>%
   plot()
+
+
 ```
+
+### Conlusion:
+
+After comparing the accuracy and roc_auc of each model, the SVM with radial kernel has the highest value, so we choose it as the final model.
 
 ## Bonus (10pts)
 
