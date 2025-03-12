@@ -242,51 +242,469 @@ Follow the machine learning workflow to train support vector classifier (same as
 Solution:
 
 ```{r}
-library(ggplot2)
-library(dplyr)
-library(rpart)
-library(rpart.plot)
 library(GGally)
 library(gtsummary)
-library(ranger)
+library(kernlab)
 library(tidyverse)
 library(tidymodels)
 library(ISLR2)
-library(MASS)       
+library(caret)
+library(doParallel)
+library(vip)
+library(doParallel)
 ```
 
 ```{r}
 # load the data
-data("Carseats", package = "ISLR")
-Carseats$AHD <- ifelse(Carseats$Sales > 8, "High", "Low")
-Carseats$AHD <- as.factor(Carseats$AHD) 
-Carseats <- Carseats[, !names(Carseats) %in% c("Sales")]
-Carseats %>% tbl_summary()
+data("Carseats", package = "ISLR2")
+Carseats$Sales<- ifelse(Carseats$Sales > 8, "High", "Low")
+Carseats$Sales <- as.factor(Carseats$Sales)
 ```
 
-### SVM with linear kernel
+#### **Initial split into test and non-test sets**
 
 ```{r}
 #Initial split into test and non-test sets
 set.seed(212)
 data_split <- initial_split(
   Carseats, 
-  prop = 0.5,
-  strata = AHD
+  prop = 0.75,
+  strata = Sales
   )
 data_split
+
+Carseats_other <- training(data_split)
+dim(Carseats_other)
+
+Carseats_test <- testing(data_split)
+dim(Carseats_test)
+```
+
+#### Recipe
+
+```{r}
+svm_recipe <- 
+  recipe(
+    Sales ~ ., 
+    data = Carseats_other
+  ) %>%
+  # create traditional dummy variables (necessary for svm)
+  step_dummy(all_nominal_predictors()) %>%
+  # zero-variance filter
+  step_zv(all_numeric_predictors()) %>% 
+  # center and scale numeric data
+  step_normalize(all_numeric_predictors()) # %>%
+  # estimate the means and standard deviations
+  # prep(training = Heart_other, retain = TRUE)
+svm_recipe
+```
+
+### SVM with linear kernel
+
+#### Model & Workflow
+
+```{r}
+svm_linear_mod <- 
+  svm_linear(
+    mode = "classification",
+    cost = tune()
+) %>%
+  set_engine("kernlab")
+svm_linear_mod
+
+svm_linear_wf <- workflow() %>% 
+  add_recipe(svm_recipe) %>%
+  add_model(svm_linear_mod)
+```
+
+#### Tuning grid
+
+```{r}
+param_grid <- grid_regular(
+  cost(range = c(-3, 2)),
+  #scale_factor(range = c(-1, 1)),
+  levels = c(5)
+  )
+param_grid
+```
+
+#### Cross-validation
+
+```{r}
+set.seed(212)
+
+folds <- vfold_cv(Carseats_other, v = 5)
+folds
+# Fit cross-validation
+svm_linear_fit <- 
+  svm_linear_wf %>% 
+  tune_grid(
+    resamples = folds,
+    grid = param_grid,
+    metrics = metric_set(roc_auc, accuracy)
+  )
+```
+
+```{r}
+#Visualize CV results
+svm_linear_fit %>% 
+  collect_metrics() %>% 
+  filter(.metric == "roc_auc") %>% 
+  ggplot(aes(x = cost, y = mean)) + 
+  geom_line() +
+  geom_point() +
+  labs(x = "Cost",
+       y = "CV AUC") +
+  scale_x_log10()
+```
+
+```{r}
+best_linear <- svm_linear_fit %>% 
+  select_best(metric = "roc_auc")
+best_linear
+```
+
+#### Finalize the model
+
+```{r}
+# Final workflow
+final_linear_wf <- 
+  svm_linear_wf %>% 
+  finalize_workflow(
+    best_linear
+  )
+# fit the whole training set, then predict test 
+final_linear_fit <- 
+  final_linear_wf %>% 
+  last_fit(data_split)
+
+# test metrics
+final_linear_fit %>% 
+  collect_metrics()
+```
+
+#### Visualize the final model
+
+```{r}
+set.seed(212)
+split_obj <- initial_split(data = Carseats, prop = 0.75, strata = Sales)
+train <- training(split_obj)
+test <- testing(split_obj)
+
+# Create the recipe
+recipe(Sales ~ ., data = train) %>%
+  # create traditional dummy variables (necessary for svm)
+  step_dummy(all_nominal_predictors()) %>%
+  # zero-variance filter
+  step_zv(all_numeric_predictors()) %>% 
+  # center and scale numeric data
+  step_normalize(all_numeric_predictors()) %>%
+  # estimate the means and standard deviations
+  prep() -> recipe_obj
+
+# Bake
+train <- bake(recipe_obj, new_data=train)
+test <- bake(recipe_obj, new_data=test)
+```
+
+```{r}
+final_linear_fit %>% 
+  pluck(".workflow", 1) %>%   
+  pull_workflow_fit() %>% 
+  # vip(method = "permute", train= Heart)
+  vip(method = "permute", 
+      target = "Sales", metric = "accuracy",
+      pred_wrapper = kernlab::predict, train = train)
+```
+
+```{r}
+svm_rbf_spec <- svm_rbf() %>%
+  set_mode("classification") %>%
+  set_engine("kernlab")
+
+svm_rbf_fit <- svm_rbf_spec %>%
+  fit(Sales ~ ., data = train[, c('Price','ShelveLoc_Good','Sales')])
+
+svm_rbf_fit %>%
+  extract_fit_engine() %>%
+  plot()
 ```
 
 ### SVM with polynomial kernel
 
-```{r}
+#### Model & Workflow
 
+```{r}
+svm_mod <- 
+  svm_poly(
+    mode = "classification",
+    cost = tune(),
+    degree = tune()
+  ) |>
+  set_engine("kernlab")
+svm_mod
+
+svm_wf <- workflow() %>%
+  add_recipe(svm_recipe) %>%
+  add_model(svm_mod)
+svm_wf
+```
+
+#### Tuning grid
+
+```{r}
+param_grid <- grid_regular(
+  cost(range = c(-3, 2)),
+  degree(range = c(1, 5)),
+  levels = c(5)
+  )
+param_grid
+```
+
+#### Cross-validation
+
+```{r}
+set.seed(212)
+
+folds <- vfold_cv(Carseats_other, v = 5)
+folds
+
+svm_fit <- svm_wf %>%
+  tune_grid(
+    resamples = folds,
+    grid = param_grid,
+    metrics = metric_set(roc_auc, accuracy)
+    )
+svm_fit
+```
+
+```{r}
+#Visualize CV results
+svm_fit %>%
+  collect_metrics() %>%
+  filter(.metric == "roc_auc") %>%
+  ggplot(mapping = aes(x = degree, y = mean)) +
+  geom_point() +
+  geom_line() +
+  labs(x = "Cost", y = "CV AUC") +
+  scale_x_log10()
+
+```
+
+```{r}
+svm_fit %>%
+  show_best(metric = "roc_auc")
+
+best_svm <- svm_fit %>%
+  select_best(metric = "roc_auc")
+best_svm
+
+```
+
+#### Finalize the model
+
+```{r}
+final_wf <- svm_wf %>%
+  finalize_workflow(best_svm)
+final_wf
+
+final_fit <- 
+  final_wf %>%
+  last_fit(data_split)
+final_fit
+
+final_fit %>% 
+  collect_metrics()
+
+```
+
+#### Visualize the final model
+
+```{r}
+set.seed(212)
+split_obj <- initial_split(data = Carseats, prop = 0.75, strata = Sales)
+train <- training(split_obj)
+test <- testing(split_obj)
+
+
+# Create the recipe
+recipe(Sales ~ ., data = train) %>%
+  # create traditional dummy variables (necessary for svm)
+  step_dummy(all_nominal_predictors()) %>%
+  # zero-variance filter
+  step_zv(all_numeric_predictors()) %>% 
+  # center and scale numeric data
+  step_normalize(all_numeric_predictors()) %>%
+  # estimate the means and standard deviations
+  prep() -> recipe_obj
+
+# Bake
+train <- bake(recipe_obj, new_data=train)
+test <- bake(recipe_obj, new_data=test)
+```
+
+```{r}
+final_fit %>% 
+  pluck(".workflow", 1) %>%   
+  pull_workflow_fit() %>% 
+  vip(method = "permute", 
+      target = "Sales", metric = "accuracy",
+      pred_wrapper = kernlab::predict, train = train)
+```
+
+```{r}
+svm_rbf_spec <- svm_rbf() %>%
+  set_mode("classification") %>%
+  set_engine("kernlab")
+
+svm_rbf_fit <- svm_rbf_spec %>%
+  fit(Sales ~ ., data = train[, c('Price','ShelveLoc_Good','Sales')])
+
+svm_rbf_fit %>%
+  extract_fit_engine() %>%
+  plot()
 ```
 
 ### SVM with radial kernel
 
-```{r}
+#### Model & Workflow
 
+```{r}
+svm_mod <- 
+  svm_rbf(
+    mode = "classification",
+    cost = tune(),
+    rbf_sigma = tune()
+  ) %>% 
+  set_engine("kernlab")
+svm_mod
+
+svm_wf <- workflow() %>%
+  add_recipe(svm_recipe) %>%
+  add_model(svm_mod)
+svm_wf
+```
+
+#### Tuning grid
+
+```{r}
+param_grid <- grid_regular(
+  cost(range = c(-8, 5)),
+  rbf_sigma(range = c(-5, -3)),
+  levels = c(14, 5)
+  )
+param_grid
+```
+
+#### Cross-validation
+
+```{r}
+set.seed(212)
+
+folds <- vfold_cv(Carseats_other, v = 5)
+folds
+
+svm_fit <- svm_wf %>%
+  tune_grid(
+    resamples = folds,
+    grid = param_grid,
+    metrics = metric_set(roc_auc, accuracy)
+    )
+svm_fit
+```
+
+```{r}
+svm_fit %>%
+  collect_metrics() %>%
+  print(width = Inf) %>%
+  filter(.metric == "roc_auc") %>%
+  ggplot(mapping = aes(x = cost, y = mean, alpha = rbf_sigma)) +
+  geom_point() +
+  geom_line(aes(group = rbf_sigma)) +
+  labs(x = "Cost", y = "CV AUC") +
+  scale_x_log10() 
+
+```
+
+```{r}
+svm_fit %>%
+  show_best(metric = "roc_auc")
+
+best_svm <- svm_fit %>%
+  select_best(metric = "roc_auc")
+best_svm
+```
+
+#### Finalize the model
+
+```{r}
+# Final workflow
+final_wf <- svm_wf %>%
+  finalize_workflow(best_svm)
+final_wf
+```
+
+```{r}
+# Fit the whole training set, then predict the test cases
+final_fit <- 
+  final_wf %>%
+  last_fit(data_split)
+final_fit
+
+# Test metrics
+final_fit %>% 
+  collect_metrics()
+
+# Test metrics
+final_fit %>% 
+  collect_metrics()
+```
+
+#### Visualize the final model
+
+```{r}
+set.seed(212)
+split_obj <- initial_split(data = Carseats, prop = 0.75, strata = Sales)
+train <- training(split_obj)
+test <- testing(split_obj)
+
+
+# Create the recipe
+recipe(Sales ~ ., data = train) %>%
+  # create traditional dummy variables (necessary for svm)
+  step_dummy(all_nominal_predictors()) %>%
+  # zero-variance filter
+  step_zv(all_numeric_predictors()) %>% 
+  # center and scale numeric data
+  step_normalize(all_numeric_predictors()) %>%
+  # estimate the means and standard deviations
+  prep() -> recipe_obj
+
+# Bake
+train <- bake(recipe_obj, new_data=train)
+test <- bake(recipe_obj, new_data=test)
+```
+
+```{r}
+final_fit %>% 
+  pluck(".workflow", 1) %>%   
+  pull_workflow_fit() %>% 
+  vip(method = "permute", 
+      target = "Sales", metric = "accuracy",
+      pred_wrapper = kernlab::predict, train = train)
+```
+
+```{r}
+svm_rbf_spec <- svm_rbf() %>%
+  set_mode("classification") %>%
+  set_engine("kernlab")
+
+svm_rbf_fit <- svm_rbf_spec %>%
+  fit(Sales ~ ., data = train[, c('Price','ShelveLoc_Good','Sales')])
+
+svm_rbf_fit %>%
+  extract_fit_engine() %>%
+  plot()
 ```
 
 ## Bonus (10pts)
