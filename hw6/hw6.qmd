@@ -1,7 +1,7 @@
 ---
 title: "Biostat 212a Homework 6"
-subtitle: "Due Mar 22, 2025 @ 11:59PM"
-author: "YOUR NAME and UID"
+subtitle: "Due Mar 21, 2025 @ 11:59PM"
+author: "Wenqiang Ge UID:106371961"
 date: today
 format:
   html:
@@ -175,6 +175,8 @@ Summarize the performance of different machine learning forecasters in the follo
 |   Boosting    |          |            |     |
 
 ## ISL Exercise 12.6.13 (90 pts)
+
+![](images/clipboard-2422393102.png)
 
 ### 12.6.13 (b) (30 pts)
 
