@@ -564,9 +564,15 @@ Summarize the performance of different machine learning forecasters in the follo
 
 Solution:
 
-```{r}
+In this time series forecasting task, different models exhibited varying levels of generalization ability $(CV\ R^2)$ and predictive performance (Test $R^2$).
 
-```
+**Baseline** relied solely on the previous day's trading volume, lacked generalization capability, and achieved a test $R^2$ of $0.35$, serving as a benchmark.
+
+**AR(5)** used data from the past five days for predictions, showing moderate generalization ability ($CV\ R^2=0.34$), while its test $R^2=0.51$ indicated that it effectively captured short-term trends.
+
+**Random Forest (RF)** performed similarly to AR(5) ($CV\ R^2=0.35$, Test $R^2=0.51$), likely due to its limited ability to fully leverage time series features, preventing it from significantly outperforming the linear model.
+
+Meanwhile, **Boosting** demonstrated the best generalization ability ($CV\ R^2=0.38$) and the highest predictive performance (Test $R^2 = 0.54$), suggesting that it was able to better learn the dynamic patterns of trading volume and make more accurate forecasts.
 
 ## ISL Exercise 12.6.13 (90 pts)
 
