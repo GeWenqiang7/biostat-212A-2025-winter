@@ -344,9 +344,9 @@ rf_wf
 
 ```{r}
 rf_grid <- grid_regular(
-  trees(range = c(300L, 500L)),
+  trees(range = c(100L, 300L)),
   mtry(range = c(3L, 5L)),       
-  levels = c(2, 3)
+  levels = 3
 )
 ```
 
@@ -383,11 +383,20 @@ rf_fit |>
 
 ```{r}
 rf_fit |>
-  show_best("rsq")
+  show_best()
 
 best_rf <- rf_fit |>
-  select_best("rsq")
+  select_best(metric = "rsq")
+best_gb
+```
 
+```{r}
+cv_results <- rf_fit |>
+  collect_metrics() |>
+  filter(.metric == "rsq") |>
+  arrange(desc(mean))
+
+print(paste("Straw man CV R2:", round(cv_results$mean[1], 2)))
 ```
 
 ```{r}
@@ -396,19 +405,23 @@ final_wf <- rf_wf |>
   finalize_workflow(best_rf)
 
 final_fit <- final_wf |>
-  fit(data = NYSE_other)
+  fit(data = NYSE_train)
 
+```
+
+```{r}
 predictions <- predict(final_fit, new_data = NYSE_test) |>
   bind_cols(NYSE_test)
 
 metrics <- predictions |>
   metrics(truth = log_volume, estimate = .pred)
-metrics
+```
 
+```{r}
 rsq_value <- metrics %>%
   filter(.metric == "rsq") %>%
   pull(.estimate)
-print(paste("Straw man test R2: ", rsq_value))
+print(paste("Straw man test R2: ", round(rsq_value,2)))
 ```
 
 ### Boosting forecaster (30pts)
@@ -544,7 +557,7 @@ Summarize the performance of different machine learning forecasters in the follo
 |:-------------:|:--------:|:----------:|:---:|
 |   Baseline    |    NA    |    0.35    |     |
 |     AR(5)     |   0.34   |    0.51    |     |
-| Random Forest |          |            |     |
+| Random Forest |   0.35   |    0.51    |     |
 |   Boosting    |   0.38   |    0.54    |     |
 
 ------------------------------------------------------------------------
