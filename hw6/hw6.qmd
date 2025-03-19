@@ -198,6 +198,120 @@ print(paste("Straw man test R2: ", r2_test_strawman))
 
 Solution:
 
+```{r}
+# Load required libraries
+library(glmnet)
+library(dplyr)
+library(tidymodels)
+en_recipe <- 
+  recipe(log_volume ~ ., data = NYSE_train) |>
+  step_dummy(all_nominal(), -all_outcomes()) |> 
+  step_normalize(all_numeric_predictors(), -all_outcomes()) |>  
+  step_zv(all_predictors()) |>
+  step_naomit(all_predictors())  |>
+  step_rm(date) |>
+  step_indicate_na()
+```
+
+```{r}
+en_mod <- 
+  linear_reg(penalty = tune(), 
+             mixture = tune()) |>
+  set_engine("glmnet")
+
+en_mod
+
+```
+
+```{r}
+en_wf <- 
+  workflow() |>
+  add_model(en_mod) |>
+  add_recipe(en_recipe)
+```
+
+```{r}
+folds <- NYSE_train |> 
+  arrange(date) |>
+  sliding_period(date, period = "month", 
+                 lookback = Inf, 
+                 assess_stop = 1)
+folds
+
+month_folds <- NYSE_train |>
+  sliding_period(
+    date,
+    "month",
+    lookback = Inf,
+    skip = 4)
+```
+
+```{r}
+en_grid <-
+  grid_regular(penalty(range = c(-8, -7), 
+                       trans = log10_trans()), 
+               mixture(), 
+               levels = c(4,5))
+en_grid
+
+en_fit <- tune_grid(en_wf, 
+                    resamples = month_folds, 
+                    grid = en_grid)
+
+```
+
+```{r}
+en_fit |>
+  collect_metrics() |>
+  filter(.metric == "rsq") |>
+  ggplot(mapping = aes(x = penalty, y = mean, colour = as.factor(mixture))) + 
+  geom_point() + 
+  labs(x = "Penalty", y = "CV rsq") + 
+  scale_x_log10(labels = scales::label_number())
+
+en_fit |>
+  show_best()
+
+best_en <- en_fit |>
+  select_best(metric = "rsq")
+```
+
+```{r}
+cv_results <- en_fit |>
+  collect_metrics() |>
+  filter(.metric == "rsq") |>
+  arrange(desc(mean))
+
+print(paste("Straw man test R2:", round(cv_results$mean[1], 2)))
+```
+
+```{r}
+#Final model
+final_wf <- en_wf |>
+  finalize_workflow(best_en)
+
+final_fit <- final_wf |>
+  fit(data = NYSE_train)
+
+```
+
+```{r}
+predictions <- predict(final_fit, new_data = NYSE_test) |>
+  bind_cols(NYSE_test)
+
+metrics <- predictions %>%
+  metrics(truth = log_volume, estimate = .pred)
+metrics
+```
+
+```{r}
+rsq_value <- metrics %>%
+  filter(.metric == "rsq") %>%
+  pull(.estimate)
+
+print(paste("Straw man test R2: ", round(rsq_value,2)))
+```
+
 ### Random forest forecaster (30pts)
 
 -   Use the same features as in AR($L$) for the random forest. Tune the random forest and evaluate the test performance.
@@ -218,8 +332,8 @@ Summarize the performance of different machine learning forecasters in the follo
 
 |    Method     | CV $R^2$ | Test $R^2$ |     |
 |:-------------:|:--------:|:----------:|:---:|
-|   Baseline    |          |            |     |
-|     AR(5)     |          |            |     |
+|   Baseline    |    NA    |    0.35    |     |
+|     AR(5)     |   0.34   |    0.51    |     |
 | Random Forest |          |            |     |
 |   Boosting    |          |            |     |
 
