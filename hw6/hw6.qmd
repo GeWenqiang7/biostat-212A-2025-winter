@@ -51,11 +51,7 @@ tplot <- function(vec) {
 ## New York Stock Exchange (NYSE) data (1962-1986) (140 pts)
 
 ::: {#fig-nyse}
-<p align="center">
-
-ISL_fig_10_14.pdf
-
-</p>
+![](images/clipboard-4137452334.png)
 
 Historical trading statistics from the New York Stock Exchange. Daily values of the normalized log trading volume, DJIA return, and log volatility are shown for a 24-year period from 1962-1986. We wish to predict trading volume on any day, given the history on all earlier days. To the left of the red bar (January 2, 1980) is training data, and to the right test data.
 :::
@@ -130,6 +126,55 @@ Use the $R^2$ between forecast and actual values as the cross validation and tes
 
 We use the straw man (use yesterday’s value of `log trading volume` to predict that of today) as the baseline method. Evaluate the $R^2$ of this method on the test data.
 
+------------------------------------------------------------------------
+
+Solution:
+
+```{r}
+# Lag: look back L trading days
+L = 5
+
+for(i in seq(1, L)) {
+  NYSE <- NYSE %>% 
+    mutate(!!paste("DJ_return_lag", i, sep = "") := lag(NYSE$DJ_return, i),
+           !!paste("log_volume_lag", i, sep = "") := lag(NYSE$log_volume, i),
+           !!paste("log_volatility_lag", i, sep = "") := lag(NYSE$log_volatility, i))
+}
+
+NYSE <-   NYSE |>
+  na.omit()
+
+print(NYSE , width = Inf)
+```
+
+```{r}
+# Split the training and tesing set
+NYSE_train <- NYSE |>
+  filter(train == 'TRUE') |>
+  select(-c(train, day_of_week)) |>
+  drop_na()
+
+NYSE_test <- NYSE |>
+  filter(train == 'FALSE') |>
+  select(-c(train, day_of_week))|>
+  drop_na()
+
+dim(NYSE_train)
+dim(NYSE_test)
+```
+
+```{r}
+library(yardstick)
+
+r2_test_strawman <- rsq_vec(NYSE_test$log_volume, 
+                            lag(NYSE_test$log_volume, 
+                                1)) |>
+  round(2)
+
+print(paste("Straw man test R2: ", r2_test_strawman))
+
+```
+
 ### Autoregression (AR) forecaster (30 pts)
 
 -   Let $$
@@ -148,6 +193,10 @@ We use the straw man (use yesterday’s value of `log trading volume` to predict
 -   Tune AR(5) with elastic net (lasso + ridge) regularization using all 3 features on the training data, and evaluate the test performance.
 
 -   Hint: [Workflow: Lasso](https://ucla-biostat-212a.github.io/2025winter/slides/06-modelselection/workflow_lasso.html) is a good starting point.
+
+------------------------------------------------------------------------
+
+Solution:
 
 ### Random forest forecaster (30pts)
 
