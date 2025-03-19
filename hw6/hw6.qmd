@@ -578,13 +578,119 @@ Meanwhile, **Boosting** demonstrated the best generalization ability ($CV\ R^2=0
 
 ![](images/clipboard-2422393102.png)
 
+\(a\)
+
+```{r}
+library(ISLR2)
+library(tidyverse)
+gene <- 
+  read.csv("https://www.statlearning.com/s/Ch12Ex13.csv", 
+           header=FALSE)
+colnames(gene) <- c(paste0("healthy", 1:20),
+                    paste0("diseased", 1:20))
+head(gene, 10)
+```
+
 ### 12.6.13 (b) (30 pts)
 
 ```{r}
+# Compute correlation-based distance matrix
+dist_matrix <- as.dist(1 - cor(gene))
+
+# Perform hierarchical clustering with different linkage methods and plot separately
+methods <- c("complete", "average", "single")
+
+for (method in methods) {
+  hc <- hclust(dist_matrix, method = method)
+
+  # Adjust margins to ensure enough space for labels
+  par(mar = c(8, 4, 4, 2))  # Increase bottom margin
+
+  # Plot the dendrogram
+  plot(hc, main = paste("Hierarchical Clustering with", method, "Linkage"),
+       sub = "", xlab = "", cex = 1, las = 2)  # Reduce font size & rotate labels
+}
 
 ```
 
+The hierarchical clustering results indicate that the ability to separate healthy and diseased samples depends on the linkage method used. The genes separate the samples into the two groups.
+
+Complete linkage provides the best separation, with most samples correctly grouped, though some misclassification remains.
+
+Average linkage shows moderate separation, but with more mixing between the two groups.
+
+Single linkage performs the worst, suffering from chaining effects that fail to create distinct clusters.
+
+These results suggest that while gene expression patterns contribute to distinguishing the two groups, the effectiveness of clustering is strongly influenced by the chosen linkage method.
+
 ### PCA and UMAP (30 pts)
+
+PCA
+
+```{r}
+library(tidymodels)
+transposed_gene <- as_tibble(t(gene)) |>
+  mutate(group = rep(c("healthy", "diseased"), each = 20))
+pca_rec <- recipe(~., data = transposed_gene) |>
+  update_role(group, new_role = "id") |>
+  step_normalize(all_predictors()) |>
+  step_pca(all_predictors())
+pca_prep <- prep(pca_rec)
+pca_prep
+
+library(tidytext)
+tidied_pca <- tidy(pca_prep, 2)
+
+tidied_pca |>
+  filter(component %in% paste0("PC", 1:4)) |>
+  group_by(component) |>
+  top_n(8, abs(value)) |>
+  ungroup() |>
+  mutate(terms = reorder_within(terms, abs(value), component)) |>
+  ggplot(aes(abs(value), terms, fill = value > 0)) +
+  geom_col() +
+  facet_wrap(~component, scales = "free_y") +
+  scale_y_reordered() +
+  labs(
+    x = "Absolute value of contribution",
+    y = NULL, fill = "Positive?"
+  )
+
+juice(pca_prep) %>%
+  ggplot(aes(PC1, PC2)) +
+  geom_point(aes(color = group), alpha = 0.7, size = 2) +
+  #geom_text(check_overlap = TRUE, hjust = "inward") +
+  labs(color = NULL)
+```
+
+```{r}
+# Transpose data so that samples are rows and genes are columns
+gene_t <- as.data.frame(t(gene))
+
+# Perform PCA
+pca_result <- prcomp(gene_t, scale. = TRUE)
+
+# Extract PCA scores (first two principal components)
+pca_scores <- as.data.frame(pca_result$x)
+
+# Add labels for healthy/diseased samples
+pca_scores$Group <- c(rep("Healthy", 20), rep("Diseased", 20))
+
+# Plot PCA results
+ggplot(pca_scores, aes(x = PC1, y = PC2, color = Group)) +
+  geom_point(size = 3, alpha = 0.7) +
+  labs(title = "PCA of Gene Expression", x = "Principal Component 1", y = "Principal Component 2") +
+  theme_minimal()
+
+
+```
+
+UMAP
+
+```{r}
+
+
+```
 
 ```{r}
 
