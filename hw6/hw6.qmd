@@ -199,6 +199,7 @@ print(paste("Straw man test R2: ", r2_test_strawman))
 Solution:
 
 ```{r}
+set.seed(212)
 # Load required libraries
 library(glmnet)
 library(dplyr)
@@ -343,6 +344,7 @@ rf_wf
 ```
 
 ```{r}
+set.seed(212)
 rf_grid <- grid_regular(
   trees(range = c(100L, 300L)),
   mtry(range = c(3L, 5L)),       
@@ -369,6 +371,7 @@ rf_fit <- rf_wf |>
 ```
 
 ```{r}
+set.seed(212)
 rf_fit |>
   collect_metrics() |>
   print(width = Inf) |>
@@ -387,7 +390,7 @@ rf_fit |>
 
 best_rf <- rf_fit |>
   select_best(metric = "rsq")
-best_gb
+best_rf
 ```
 
 ```{r}
@@ -462,6 +465,7 @@ gb_wf
 ```
 
 ```{r}
+set.seed(212)
 bt_grid <- grid_regular(
   tree_depth(range = c(1L, 3L)),
   learn_rate(range = c(-2, -0.5), 
@@ -481,6 +485,7 @@ month_folds <- NYSE_train|>
 ```
 
 ```{r}
+set.seed(212)
 gb_fit <- gb_wf %>%
   tune_grid(
     resamples = month_folds,
@@ -556,7 +561,7 @@ Summarize the performance of different machine learning forecasters in the follo
 |    Method     | CV $R^2$ | Test $R^2$ |     |
 |:-------------:|:--------:|:----------:|:---:|
 |   Baseline    |    NA    |    0.35    |     |
-|     AR(5)     |   0.34   |    0.51    |     |
+|     AR(5)     |   0.38   |    0.55    |     |
 | Random Forest |   0.35   |    0.51    |     |
 |   Boosting    |   0.38   |    0.54    |     |
 
@@ -564,15 +569,17 @@ Summarize the performance of different machine learning forecasters in the follo
 
 Solution:
 
-In this time series forecasting task, different models exhibited varying levels of generalization ability $(CV\ R^2)$ and predictive performance (Test $R^2$).
+In this time series forecasting task, different models demonstrated varying levels of generalization ability $(CV\ R^2)$ and predictive performance $(Test\ R^2)$.
 
-**Baseline** relied solely on the previous day's trading volume, lacked generalization capability, and achieved a test $R^2$ of $0.35$, serving as a benchmark.
+**Baseline** relied solely on the previous day's trading volume, lacking generalization capability, and achieved a test $R^2$ of $0.35$, serving as a benchmark.
 
-**AR(5)** used data from the past five days for predictions, showing moderate generalization ability ($CV\ R^2=0.34$), while its test $R^2=0.51$ indicated that it effectively captured short-term trends.
+**AR(5)** utilized data from the past five days for predictions, showing moderate generalization ability $(CV\ R^2 = 0.38)$. Its $Test\ R^2=0.55$ suggests that it effectively captured short-term trends and improved upon the baseline.
 
-**Random Forest (RF)** performed similarly to AR(5) ($CV\ R^2=0.35$, Test $R^2=0.51$), likely due to its limited ability to fully leverage time series features, preventing it from significantly outperforming the linear model.
+**Random Forest (RF)** exhibited slightly lower generalization ability than AR(5) $(CV\ R^2=0.35)$ and achieved a $Test\ R^2=0.51$. This indicates that while RF was able to leverage time-series patterns, it did not significantly surpass the linear AR(5) model.
 
-Meanwhile, **Boosting** demonstrated the best generalization ability ($CV\ R^2=0.38$) and the highest predictive performance (Test $R^2 = 0.54$), suggesting that it was able to better learn the dynamic patterns of trading volume and make more accurate forecasts.
+**Boosting** demonstrated the best generalization ability $(CV\ R^2=0.38)$ and strong predictive performance $Test\ R^2=0.54$, suggesting that it effectively learned the dynamic patterns in trading volume, leading to improved forecasts.
+
+Overall, AR(5) and Boosting provided the highest generalization, with AR(5) showing better predictive accuracy across different datasets.
 
 ## ISL Exercise 12.6.13 (90 pts)
 
@@ -636,7 +643,6 @@ pca_rec <- recipe(~., data = transposed_gene) |>
   step_normalize(all_predictors()) |>
   step_pca(all_predictors())
 pca_prep <- prep(pca_rec)
-pca_prep
 
 library(tidytext)
 tidied_pca <- tidy(pca_prep, 2)
@@ -653,7 +659,7 @@ tidied_pca |>
   scale_y_reordered() +
   labs(
     x = "Absolute value of contribution",
-    y = NULL, fill = "Positive?"
+    y = NULL, fill = "Positive"
   )
 
 juice(pca_prep) %>%
@@ -661,43 +667,76 @@ juice(pca_prep) %>%
   geom_point(aes(color = group), alpha = 0.7, size = 2) +
   #geom_text(check_overlap = TRUE, hjust = "inward") +
   labs(color = NULL)
-```
-
-```{r}
-# Transpose data so that samples are rows and genes are columns
-gene_t <- as.data.frame(t(gene))
-
-# Perform PCA
-pca_result <- prcomp(gene_t, scale. = TRUE)
-
-# Extract PCA scores (first two principal components)
-pca_scores <- as.data.frame(pca_result$x)
-
-# Add labels for healthy/diseased samples
-pca_scores$Group <- c(rep("Healthy", 20), rep("Diseased", 20))
-
-# Plot PCA results
-ggplot(pca_scores, aes(x = PC1, y = PC2, color = Group)) +
-  geom_point(size = 3, alpha = 0.7) +
-  labs(title = "PCA of Gene Expression", x = "Principal Component 1", y = "Principal Component 2") +
-  theme_minimal()
-
 
 ```
 
 UMAP
 
 ```{r}
+library(embed)
+umap_rec <- recipe(~., data = transposed_gene) |>
+  update_role(group, new_role = "id") |>
+  step_normalize(all_predictors()) |>
+  step_umap(all_predictors())
+umap_prep <- prep(umap_rec)
+umap_prep
 
-
-```
-
-```{r}
-
+juice(umap_prep) %>%
+  ggplot(aes(UMAP1, UMAP2)) +
+  geom_point(aes(color = group), alpha = 0.7, size = 2) +
+#  geom_text(check_overlap = TRUE, hjust = "inward") +
+  labs(color = NULL)
 ```
 
 ### 12.6.13 (c) (30 pts)
 
 ```{r}
+library(ggrepel)
+
+# Read the dataset
+Ch12Ex13 <- read_csv("https://www.statlearning.com/s/Ch12Ex13.csv", col_names = paste("ID", 1:40, sep = ""))
+
+# Define group variables (1 = diseased, 0 = healthy)
+grp <- factor(rep(c(1, 0), each = 20))
+
+# **Optimized computation of Wilcoxon p-values**
+wilcox_pvalues <- apply(as.matrix(Ch12Ex13), 1, function(y) {
+  wilcox.test(y ~ grp)$p.value  # Perform Wilcoxon rank-sum test for each gene
+})
+
+# **Optimized computation of Log2 Fold Change (LFC)**
+logFC_values <- rowMeans(as.matrix(Ch12Ex13)[, 1:20]) - rowMeans(as.matrix(Ch12Ex13)[, 21:40])  # Compute mean differences
+logFC_values <- log2(exp(logFC_values))  # Convert to Log2 Fold Change
+
+# **Create results table**
+out <- tibble(
+  gene = rownames(Ch12Ex13),  # Assign gene names
+  p_value = wilcox_pvalues,  # Store p-values
+  logFC = logFC_values  # Store Log2 Fold Change values
+) %>%
+  mutate(adj_p_value = p.adjust(p_value, method = "BH"))  
+
+# **Filter significant genes (adj_p_value < 0.05)**
+sig_genes <- out %>% filter(adj_p_value < 0.05)
+
+# **Generate the volcano plot**
+ggplot(out, aes(x = logFC, y = -log10(p_value))) +
+  geom_point(aes(color = adj_p_value < 0.05), alpha = 0.7) + 
+  geom_text_repel(data = sig_genes, aes(label = gene), size = 4) + 
+  scale_color_manual(values = c("gray", "red")) +  # Define color mapping
+  labs(title = "Volcano Plot: Gene Expression Differences",
+       x = "Log2 Fold Change (LFC)", y = "-log10(p-value)") +
+  theme_minimal()  # Apply a minimalistic theme
+
 
 ```
+
+**Methodology**
+
+I applied the Wilcoxon rank-sum test for statistical analysis and calculated the log2 Fold Change (LFC) to measure the direction and magnitude of gene expression changes. The Wilcoxon test is suitable for non-normally distributed data and is used to assess whether gene expression significantly differs between the two groups. I adjusted the p-values using the Benjamini-Hochberg (BH) method to control the false discovery rate (FDR) and selected genes with adj_p_value \< 0.05 as significantly differentially expressed genes (DEGs). Finally, I visualized the results using a volcano plot, where the x-axis represents the LFC, and the y-axis represents the -log10(p-value), providing an intuitive way to identify genes with significant expression differences between the two groups.
+
+**Findings and Conclusions**
+
+The results from the volcano plot analysis indicate that some genes show significant upregulation or downregulation between the healthy and diseased groups. The red genes indicate significant differences in expression between the two groups and may be potential disease biomarkers. For example, genes 502, 600, 568, and 529 are expressed higher in the healthy group, while genes 135 and 172 are expressed higher in the disease group.
+
+Genes on the left side (LFC \< 0) are more highly expressed in the healthy group, potentially playing a protective role, whereas genes on the right side (LFC \> 0) are more highly expressed in the diseased group, possibly contributing to disease development.
